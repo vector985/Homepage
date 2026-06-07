@@ -8,7 +8,7 @@ Next.js + Vercel + Supabase 的每日打卡网页。`EveryDay_Old.xlsx` 保留�
 2. 在 Supabase SQL Editor 执行 `supabase/schema.sql`。
 3. 复制 `.env.example` 为 `.env.local`，填入：
    - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 4. 安装并启动：
 
 ```bash
@@ -20,8 +20,13 @@ npm run dev
 
 1. 上传代码到 GitHub。
 2. 在 Vercel 导入该仓库。
-3. 在 Vercel Environment Variables 中添加 Supabase URL 和 anon key。
+3. 在 Vercel Environment Variables 中添加：
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 4. 部署后通过 Vercel URL 访问。
+
+如果你使用 Supabase 老项目里的 anon key，也可以把 key 放在
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`；代码会兼容这两个变量名。
 
 ## MVP 范围
 
