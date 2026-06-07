@@ -67,7 +67,7 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
       .order("record_date", { ascending: false });
 
     if (error) {
-      setMessage(error.message);
+      setMessage(formatDataError(error.message));
     } else {
       setRecords((data ?? []) as CheckinRecord[]);
     }
@@ -108,7 +108,7 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
     });
 
     if (error) {
-      setMessage(error.message);
+      setMessage(formatDataError(error.message));
     } else {
       setMessage("已保存。");
       await loadMonth();
@@ -123,7 +123,7 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
 
     const { error } = await supabase.from("checkin_records").delete().eq("id", record.id);
     if (error) {
-      setMessage(error.message);
+      setMessage(formatDataError(error.message));
     } else {
       setMessage("已删除。");
       await loadMonth();
@@ -136,7 +136,7 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
       .select("*")
       .order("record_date", { ascending: true });
     if (error) {
-      setMessage(error.message);
+      setMessage(formatDataError(error.message));
       return;
     }
     downloadCsv((data ?? []) as CheckinRecord[]);
@@ -208,6 +208,8 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
           <p>{score.missing.length > 0 ? `未填写：${score.missing.join("、")}` : "核心项已填写完整"}</p>
         </div>
 
+        {message ? <StatusMessage message={message} /> : null}
+
         <form className="checkin-form">
           <NumberField label="睡眠/h" value={form.sleep_hours} onChange={(value) => update("sleep_hours", value)} step="0.1" />
           <label>
@@ -254,7 +256,6 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
             <Save size={17} />
             {saving ? "保存中..." : "保存到 Supabase"}
           </button>
-          {message ? <p className="message">{message}</p> : null}
         </div>
       </section>
 
@@ -364,6 +365,29 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
       </nav>
     </main>
   );
+}
+
+function StatusMessage({ message }: { message: string }) {
+  const isError = message.includes("数据库") || message.includes("失败") || message.includes("权限");
+
+  return (
+    <div className={isError ? "status-message error" : "status-message success"}>
+      <strong>{isError ? "需要处理" : "状态"}</strong>
+      <span>{message}</span>
+    </div>
+  );
+}
+
+function formatDataError(message: string) {
+  if (message.includes("checkin_records") || message.includes("schema cache")) {
+    return "数据库表尚未创建。请先在 Supabase SQL Editor 执行仓库中的 supabase/schema.sql，然后刷新页面。";
+  }
+
+  if (message.toLowerCase().includes("row-level security") || message.includes("permission denied")) {
+    return "数据库权限被拒绝。请确认 Supabase 已启用并配置 checkin_records 的 RLS 策略。";
+  }
+
+  return `操作失败：${message}`;
 }
 
 function NumberField({

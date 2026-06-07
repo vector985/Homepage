@@ -236,6 +236,31 @@ textarea:focus {
   line-height: 1.5;
 }
 
+.status-message {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.status-message strong {
+  font-size: 13px;
+}
+
+.status-message.success {
+  border: 1px solid #cfe7e3;
+  background: #eff8f6;
+  color: #0f766e;
+}
+
+.status-message.error {
+  border: 1px solid #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
 .app-shell {
   min-height: 100vh;
   display: grid;
@@ -533,16 +558,50 @@ textarea:focus {
 @media (max-width: 820px) {
   .setup-screen,
   .auth-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 18px;
+    width: 100%;
   }
 
   .setup-card,
   .auth-card {
+    width: 100%;
+    max-width: min(340px, calc(100vw - 36px));
     padding: 24px;
   }
 
+  .auth-card {
+    gap: 18px;
+  }
+
+  .auth-card > *,
+  .auth-form,
+  .auth-form label,
+  .auth-form label span,
+  .mode-tabs {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .mode-tabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: hidden;
+  }
+
+  .mode-tabs button {
+    min-width: 0;
+    gap: 5px;
+    padding: 0 6px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
   h1 {
-    font-size: 25px;
+    font-size: 24px;
   }
 
   .app-shell {
