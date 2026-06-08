@@ -56,12 +56,9 @@ export default function Home() {
     return (
       <main className="setup-screen">
         <section className="setup-card">
-          <p className="eyebrow">环境变量缺失</p>
-          <h1>连接 Supabase 后即可使用</h1>
-          <p>
-            请在本地 `.env.local` 或 Vercel Environment Variables 中设置
-            `NEXT_PUBLIC_SUPABASE_URL` 和 `NEXT_PUBLIC_SUPABASE_ANON_KEY`。
-          </p>
+          <p className="eyebrow">服务暂不可用</p>
+          <h1>正在等待数据服务配置</h1>
+          <p>请稍后再试，或联系维护者检查线上配置。</p>
         </section>
       </main>
     );

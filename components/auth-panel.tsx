@@ -56,7 +56,7 @@ export function AuthPanel({ supabase }: { supabase: SupabaseClient }) {
         <div>
           <p className="eyebrow">每日打卡</p>
           <h1>登录后同步你的打卡记录</h1>
-          <p className="muted">邮箱账号可在电脑和手机间同步。所有记录由 Supabase RLS 隔离。</p>
+          <p className="muted">邮箱账号可在电脑和手机间同步，随时继续记录当天状态。</p>
         </div>
 
         <div className="mode-tabs" role="tablist" aria-label="登录方式">

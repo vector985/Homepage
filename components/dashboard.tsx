@@ -147,8 +147,8 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
       <aside className="sidebar">
         <div>
           <p className="eyebrow">每日打卡</p>
-          <h1>减脂重启</h1>
-          <p className="muted">从 2026-06-07 开始记录</p>
+          <h1>今日状态</h1>
+          <p className="muted">记录习惯、体重与复盘</p>
         </div>
 
         <nav className="side-nav" aria-label="主导航">
@@ -254,7 +254,7 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
         <div className="action-row">
           <button className="primary-button" onClick={saveRecord} disabled={saving}>
             <Save size={17} />
-            {saving ? "保存中..." : "保存到 Supabase"}
+            {saving ? "保存中..." : "保存记录"}
           </button>
         </div>
       </section>
@@ -380,11 +380,11 @@ function StatusMessage({ message }: { message: string }) {
 
 function formatDataError(message: string) {
   if (message.includes("checkin_records") || message.includes("schema cache")) {
-    return "数据库表尚未创建。请先在 Supabase SQL Editor 执行仓库中的 supabase/schema.sql，然后刷新页面。";
+    return "数据服务尚未初始化。请完成数据库初始化后刷新页面。";
   }
 
   if (message.toLowerCase().includes("row-level security") || message.includes("permission denied")) {
-    return "数据库权限被拒绝。请确认 Supabase 已启用并配置 checkin_records 的 RLS 策略。";
+    return "当前账号暂时无法访问数据。请重新登录，或检查数据权限设置。";
   }
 
   return `操作失败：${message}`;
