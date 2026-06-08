@@ -8,7 +8,6 @@ export type ScoreItem = {
 
 export type ScoreDetail = {
   total: number;
-  missing: string[];
   items: ScoreItem[];
 };
 

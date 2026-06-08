@@ -258,7 +258,7 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
             <span>今日评分</span>
             <strong>{score.total}</strong>
           </div>
-          <p>{score.missing.length > 0 ? `待补充：${score.missing.join("、")}` : "今日记录完整"}</p>
+          <p>评分随填写实时更新</p>
         </div>
 
         {message ? <StatusMessage message={message} /> : null}

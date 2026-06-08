@@ -29,7 +29,6 @@ function gradedItem(
       max,
       earned: 0,
       reason: "未填写",
-      missing: true,
     };
   }
 
@@ -37,7 +36,6 @@ function gradedItem(
     key,
     label,
     max,
-    missing: false,
     ...calculate(),
   };
 }
@@ -151,7 +149,6 @@ export function calculateScore(values: CheckinFormValues): ScoreDetail {
 
   return {
     total,
-    missing: items.filter((item) => item.missing).map((item) => item.label),
     items: scoreItems,
   };
 }
