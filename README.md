@@ -34,7 +34,7 @@ npm run dev
 - 今日打卡保存，按 `user_id + record_date` upsert。
 - 历史记录查看和删除。
 - 评分即时计算，保存 `score` 和 `score_detail`。
-- 体重趋势、7 日均重、目标线、评分趋势、打卡天数。
+- 体重趋势、7 日均重、评分趋势、打卡天数。
 - CSV 导出。
 
 第一版不做旧 Excel 全量导入、自定义字段、评分配置编辑、Excel 写入、热量库或 AI 分析。

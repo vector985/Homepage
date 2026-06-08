@@ -24,7 +24,7 @@ import {
   Trash2,
   WalletCards,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useId, useMemo, useState, type ChangeEvent } from "react";
 
 type View = "today" | "health" | "habits" | "tasks" | "finance" | "score" | "history" | "trend";
 type UpdateForm = <K extends keyof CheckinFormValues>(key: K, value: CheckinFormValues[K]) => void;
@@ -37,7 +37,6 @@ const emptyForm = (date = toLocalDateString()): CheckinFormValues => ({
   exercise_minutes: null,
   steps: null,
   weight_kg: null,
-  target_weight_kg: null,
   body_fat_pct: null,
   life_discipline: null,
   impulse_spending: null,
@@ -107,9 +106,11 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
     [form.wake_time, form.sleep_hours],
   );
 
-  const loadMonth = useCallback(async () => {
+  const loadMonth = useCallback(async (clearMessage = true) => {
     setLoading(true);
-    setMessage("");
+    if (clearMessage) {
+      setMessage("");
+    }
     const range = getMonthRange(monthKey);
     const { data, error } = await supabase
       .from("checkin_records")
@@ -148,25 +149,29 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
     setSaving(true);
     setMessage("");
 
-    const payload: CheckinRecord = {
-      ...form,
-      user_id: user.id,
-      score: score.total,
-      score_detail: score,
-    };
+    try {
+      const payload: CheckinRecord = {
+        ...form,
+        user_id: user.id,
+        score: score.total,
+        score_detail: score,
+      };
 
-    const { error } = await supabase.from("checkin_records").upsert(payload, {
-      onConflict: "user_id,record_date",
-    });
+      const { error } = await supabase.from("checkin_records").upsert(payload, {
+        onConflict: "user_id,record_date",
+      });
 
-    if (error) {
-      setMessage(formatDataError(error.message));
-    } else {
-      setMessage("已保存。");
-      await loadMonth();
+      if (error) {
+        setMessage(formatDataError(error.message));
+      } else {
+        setMessage("已保存。");
+        await loadMonth(false);
+      }
+    } catch (error) {
+      setMessage(formatDataError(error instanceof Error ? error.message : "未知错误"));
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
   }
 
   async function deleteRecord(record: CheckinRecord) {
@@ -178,7 +183,7 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
       setMessage(formatDataError(error.message));
     } else {
       setMessage("已删除。");
-      await loadMonth();
+      await loadMonth(false);
     }
   }
 
@@ -313,20 +318,50 @@ function TodayHub({ onOpen }: { onOpen: (view: View) => void }) {
 function HealthForm({ form, update, sleepStart }: { form: CheckinFormValues; update: UpdateForm; sleepStart: string }) {
   return (
     <form className="checkin-form">
-      <NumberField label="睡眠/h" value={form.sleep_hours} onChange={(value) => update("sleep_hours", value)} step="0.1" />
+      <NumberField
+        label="睡眠/h"
+        value={form.sleep_hours}
+        onChange={(value) => update("sleep_hours", value)}
+        step="0.1"
+        quickValues={[
+          { label: "6.5", value: 6.5 },
+          { label: "7", value: 7 },
+          { label: "8", value: 8 },
+        ]}
+      />
       <label>
         起床时间
         <input type="time" value={form.wake_time ?? ""} onChange={(event) => update("wake_time", event.target.value || null)} />
       </label>
       <ReadOnlyField label="推算入睡时间" value={sleepStart || "填写睡眠和起床后自动计算"} />
       <SelectField label="运动项目" value={form.exercise_type ?? ""} onChange={(value) => update("exercise_type", value)} options={exerciseOptions} />
-      <NumberField label="运动时长/mins" value={form.exercise_minutes} onChange={(value) => update("exercise_minutes", value)} />
+      <NumberField
+        label="运动时长/mins"
+        value={form.exercise_minutes}
+        onChange={(value) => update("exercise_minutes", value)}
+        quickValues={[
+          { label: "15", value: 15 },
+          { label: "30", value: 30 },
+          { label: "45", value: 45 },
+        ]}
+      />
       <NumberField label="步数" value={form.steps} onChange={(value) => update("steps", value)} />
       <NumberField label="体重/kg" value={form.weight_kg} onChange={(value) => update("weight_kg", value)} step="0.1" />
       <NumberField label="体脂率/%" value={form.body_fat_pct} onChange={(value) => update("body_fat_pct", value)} step="0.1" />
-      <NumberField label="目标体重/kg" value={form.target_weight_kg} onChange={(value) => update("target_weight_kg", value)} step="0.1" />
-      <NumberField label="洗漱护理 0-2" value={form.hygiene_score} onChange={(value) => update("hygiene_score", value)} max={2} />
-      <NumberField label="饮食执行 0-2" value={form.diet_score} onChange={(value) => update("diet_score", value)} max={2} />
+      <NumberField
+        label="洗漱护理 0-2"
+        value={form.hygiene_score}
+        onChange={(value) => update("hygiene_score", value)}
+        max={2}
+        quickValues={scoreQuickValues}
+      />
+      <NumberField
+        label="饮食执行 0-2"
+        value={form.diet_score}
+        onChange={(value) => update("diet_score", value)}
+        max={2}
+        quickValues={scoreQuickValues}
+      />
       <label className="wide">
         饮食记录
         <textarea value={form.diet_notes ?? ""} onChange={(event) => update("diet_notes", event.target.value)} rows={4} />
@@ -342,9 +377,24 @@ function HealthForm({ form, update, sleepStart }: { form: CheckinFormValues; upd
 function HabitsForm({ form, update }: { form: CheckinFormValues; update: UpdateForm }) {
   return (
     <form className="checkin-form">
-      <NumberField label="情绪失控次数" value={form.emotional_control} onChange={(value) => update("emotional_control", value)} />
-      <NumberField label="冲动消费次数" value={form.impulse_spending} onChange={(value) => update("impulse_spending", value)} />
-      <NumberField label="生活失控次数" value={form.life_discipline} onChange={(value) => update("life_discipline", value)} />
+      <NumberField
+        label="情绪失控次数"
+        value={form.emotional_control}
+        onChange={(value) => update("emotional_control", value)}
+        quickValues={countQuickValues}
+      />
+      <NumberField
+        label="冲动消费次数"
+        value={form.impulse_spending}
+        onChange={(value) => update("impulse_spending", value)}
+        quickValues={countQuickValues}
+      />
+      <NumberField
+        label="生活失控次数"
+        value={form.life_discipline}
+        onChange={(value) => update("life_discipline", value)}
+        quickValues={countQuickValues}
+      />
       <label className="wide">
         冲动消费复盘
         <textarea
@@ -369,7 +419,19 @@ function TasksForm({ form, update }: { form: CheckinFormValues; update: UpdateFo
         已完成任务
         <textarea value={form.completed_tasks ?? ""} onChange={(event) => update("completed_tasks", event.target.value)} rows={5} />
       </label>
-      <NumberField label="任务完成率 0-1" value={form.task_completion} onChange={(value) => update("task_completion", value)} step="0.05" max={1} />
+      <NumberField
+        label="任务完成率 0-1"
+        value={form.task_completion}
+        onChange={(value) => update("task_completion", value)}
+        step="0.05"
+        max={1}
+        quickValues={[
+          { label: "0", value: 0 },
+          { label: "一半", value: 0.5 },
+          { label: "大半", value: 0.75 },
+          { label: "完成", value: 1 },
+        ]}
+      />
       <label className="wide">
         明日任务推荐
         <textarea value={form.tomorrow_tasks ?? ""} onChange={(event) => update("tomorrow_tasks", event.target.value)} rows={5} />
@@ -501,7 +563,13 @@ function TrendPanel({ stats, trendPoints }: { stats: ReturnType<typeof calculate
         <MiniChart data={trendPoints} kind="score" />
       </section>
       <section className="chart-block">
-        <h3>体重 / 7日均重 / 目标线</h3>
+        <div className="chart-heading">
+          <h3>体重 / 7日均重</h3>
+          <div className="chart-legend" aria-label="图例">
+            <span className="legend-main">体重</span>
+            <span className="legend-average">7日均重</span>
+          </div>
+        </div>
         <MiniChart data={trendPoints} kind="weight" />
       </section>
     </div>
@@ -555,26 +623,63 @@ function NumberField({
   value,
   onChange,
   step = "1",
+  min = 0,
   max,
+  quickValues = [],
 }: {
   label: string;
   value: number | null;
   onChange: (value: number | null) => void;
   step?: string;
+  min?: number;
   max?: number;
+  quickValues?: QuickValue[];
 }) {
+  const id = useId();
+
+  function updateValue(nextValue: string) {
+    if (nextValue === "") {
+      onChange(null);
+      return;
+    }
+
+    const parsed = Number(nextValue);
+    if (!Number.isFinite(parsed)) {
+      onChange(null);
+      return;
+    }
+
+    onChange(clampNumber(parsed, min, max));
+  }
+
   return (
-    <label>
-      {label}
+    <div className="field-control">
+      <label htmlFor={id}>{label}</label>
       <input
+        id={id}
         type="number"
         value={value ?? ""}
         step={step}
-        min="0"
+        min={min}
         max={max}
-        onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(event.target.value === "" ? null : Number(event.target.value))}
+        inputMode="decimal"
+        onChange={(event: ChangeEvent<HTMLInputElement>) => updateValue(event.target.value)}
       />
-    </label>
+      {quickValues.length > 0 ? (
+        <div className="quick-value-row" aria-label={`${label} 快捷填写`}>
+          {quickValues.map((item) => (
+            <button
+              key={`${label}-${item.value}`}
+              type="button"
+              className={value === item.value ? "active" : ""}
+              onClick={() => onChange(item.value)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -622,6 +727,28 @@ function Metric({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+type QuickValue = {
+  label: string;
+  value: number;
+};
+
+const scoreQuickValues: QuickValue[] = [
+  { label: "0", value: 0 },
+  { label: "1", value: 1 },
+  { label: "2", value: 2 },
+];
+
+const countQuickValues: QuickValue[] = [
+  { label: "0次", value: 0 },
+  { label: "1次", value: 1 },
+  { label: "2次", value: 2 },
+];
+
+function clampNumber(value: number, min: number, max?: number) {
+  const lowerBounded = Math.max(min, value);
+  return typeof max === "number" ? Math.min(max, lowerBounded) : lowerBounded;
+}
+
 function viewTitle(view: View) {
   const titleMap: Record<View, string> = {
     today: "今日填写",
@@ -645,7 +772,6 @@ function recordToForm(record: CheckinRecord): CheckinFormValues {
     exercise_minutes: record.exercise_minutes,
     steps: record.steps,
     weight_kg: record.weight_kg,
-    target_weight_kg: record.target_weight_kg,
     body_fat_pct: record.body_fat_pct,
     life_discipline: record.life_discipline,
     impulse_spending: record.impulse_spending,

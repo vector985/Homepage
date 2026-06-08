@@ -20,7 +20,6 @@ export function buildTrendPoints(records: CheckinRecord[]): TrendPoint[] {
       score: record.score,
       weight: record.weight_kg,
       movingAverageWeight,
-      targetWeight: record.target_weight_kg,
     };
   });
 }
@@ -33,10 +32,10 @@ export function calculateMonthStats(records: CheckinRecord[]) {
       : 0;
   const checkinDays = records.length;
   const goodDays = records.filter((record) => record.score >= 80).length;
-  const weights = records
-    .map((record) => record.weight_kg)
-    .filter((value): value is number => typeof value === "number");
-  const latestWeight = weights.at(-1) ?? null;
+  const latestWeight =
+    [...records]
+      .sort((a, b) => b.record_date.localeCompare(a.record_date))
+      .find((record) => typeof record.weight_kg === "number")?.weight_kg ?? null;
 
   return {
     averageScore,

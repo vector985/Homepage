@@ -164,12 +164,44 @@ h3 {
 
 .auth-form label,
 .checkin-form label,
+.field-control,
 .date-input {
   display: grid;
   gap: 7px;
   color: #34413f;
   font-size: 13px;
   font-weight: 700;
+}
+
+.field-control label {
+  display: block;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.quick-value-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.quick-value-row button {
+  min-height: 28px;
+  border: 1px solid #d6e2df;
+  border-radius: 999px;
+  background: #f8faf9;
+  color: #465653;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.quick-value-row button:hover,
+.quick-value-row button.active {
+  border-color: #7bb9b3;
+  background: #e5f3f1;
+  color: var(--accent);
 }
 
 .auth-form label span {
@@ -388,6 +420,11 @@ select:focus {
   font-size: 13px;
 }
 
+.score-strip p {
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+
 .score-strip strong {
   color: var(--accent);
   font-size: 30px;
@@ -445,8 +482,13 @@ select:focus {
 }
 
 .action-row {
+  position: sticky;
+  bottom: 12px;
+  z-index: 10;
   align-items: center;
   flex-wrap: wrap;
+  padding-top: 12px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--surface) 34%);
 }
 
 .secondary-inline-button {
@@ -550,6 +592,45 @@ select:focus {
   border-top: 1px solid var(--line);
 }
 
+.chart-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.chart-heading h3 {
+  margin-bottom: 0;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chart-legend span::before {
+  content: "";
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.chart-legend .legend-average::before {
+  background: repeating-linear-gradient(90deg, var(--accent-2) 0 5px, transparent 5px 8px);
+}
+
 .standalone {
   padding-top: 0;
   border-top: 0;
@@ -595,11 +676,6 @@ select:focus {
 .mini-chart .average-line {
   stroke: var(--accent-2);
   stroke-dasharray: 4 4;
-}
-
-.mini-chart .target-line {
-  stroke: #f59e0b;
-  stroke-dasharray: 6 4;
 }
 
 .empty-chart {
@@ -670,6 +746,7 @@ select:focus {
   .auth-form,
   .auth-form label,
   .auth-form label span,
+  .field-control,
   .mode-tabs {
     min-width: 0;
     max-width: 100%;
@@ -737,6 +814,16 @@ select:focus {
 
   .checkin-form .wide {
     grid-column: auto;
+  }
+
+  .action-row {
+    bottom: 76px;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .action-row button {
+    width: 100%;
   }
 
   .section-grid {

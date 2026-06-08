@@ -22,7 +22,6 @@ export type CheckinRecord = {
   exercise_minutes: number | null;
   steps: number | null;
   weight_kg: number | null;
-  target_weight_kg: number | null;
   body_fat_pct: number | null;
   life_discipline: number | null;
   impulse_spending: number | null;
@@ -60,5 +59,4 @@ export type TrendPoint = {
   score: number | null;
   weight: number | null;
   movingAverageWeight: number | null;
-  targetWeight: number | null;
 };

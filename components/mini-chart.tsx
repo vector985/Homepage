@@ -10,7 +10,6 @@ export function MiniChart({ data, kind }: { data: TrendPoint[]; kind: ChartKind 
       index,
       value: kind === "score" ? point.score : point.weight,
       aux: kind === "weight" ? point.movingAverageWeight : null,
-      target: kind === "weight" ? point.targetWeight : null,
     }))
     .filter((point) => typeof point.value === "number");
 
@@ -18,9 +17,7 @@ export function MiniChart({ data, kind }: { data: TrendPoint[]; kind: ChartKind 
     return <div className="empty-chart">数据不足</div>;
   }
 
-  const values = points.flatMap((point) =>
-    [point.value, point.aux, point.target].filter((value): value is number => typeof value === "number"),
-  );
+  const values = points.flatMap((point) => [point.value, point.aux].filter((value): value is number => typeof value === "number"));
   const min = kind === "score" ? 0 : Math.min(...values) - 1;
   const max = kind === "score" ? 100 : Math.max(...values) + 1;
   const width = 320;
@@ -34,16 +31,11 @@ export function MiniChart({ data, kind }: { data: TrendPoint[]; kind: ChartKind 
     .filter((point) => typeof point.aux === "number")
     .map((point) => `${x(point.index)},${y(point.aux as number)}`)
     .join(" ");
-  const targetLine = points
-    .filter((point) => typeof point.target === "number")
-    .map((point) => `${x(point.index)},${y(point.target as number)}`)
-    .join(" ");
 
   return (
-    <svg className="mini-chart" viewBox={`0 0 ${width} ${height}`} role="img">
+    <svg className="mini-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={kind === "score" ? "评分趋势图" : "体重趋势图"}>
       <line x1={pad} x2={width - pad} y1={height - pad} y2={height - pad} />
       <line x1={pad} x2={pad} y1={pad} y2={height - pad} />
-      {targetLine ? <polyline className="target-line" points={targetLine} /> : null}
       {averageLine ? <polyline className="average-line" points={averageLine} /> : null}
       <polyline className="main-line" points={line} />
       {points.map((point) => (

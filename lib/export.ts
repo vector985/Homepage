@@ -11,7 +11,6 @@ const COLUMNS = [
   ["steps", "步数"],
   ["weight_kg", "体重"],
   ["body_fat_pct", "体脂率"],
-  ["target_weight_kg", "目标体重"],
   ["life_discipline", "生活节制"],
   ["impulse_spending", "冲动消费"],
   ["impulse_spending_note", "冲动消费复盘"],

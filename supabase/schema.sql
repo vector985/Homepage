@@ -10,7 +10,6 @@ create table if not exists public.checkin_records (
   exercise_minutes integer check (exercise_minutes is null or exercise_minutes >= 0),
   steps integer check (steps is null or steps >= 0),
   weight_kg numeric(5, 2),
-  target_weight_kg numeric(5, 2),
   body_fat_pct numeric(5, 2),
   life_discipline integer check (life_discipline is null or life_discipline >= 0),
   impulse_spending integer check (impulse_spending is null or impulse_spending >= 0),
@@ -39,6 +38,7 @@ create table if not exists public.checkin_records (
 );
 
 alter table public.checkin_records add column if not exists exercise_type text;
+alter table public.checkin_records drop column if exists target_weight_kg;
 alter table public.checkin_records add column if not exists body_fat_pct numeric(5, 2);
 alter table public.checkin_records add column if not exists impulse_spending_note text;
 alter table public.checkin_records add column if not exists diet_notes text;
