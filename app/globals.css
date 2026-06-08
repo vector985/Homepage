@@ -34,7 +34,8 @@ body {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
 }
 
@@ -127,6 +128,7 @@ h3 {
 .ghost-button,
 .secondary-button,
 .primary-button,
+.secondary-inline-button,
 .icon-button {
   border: 1px solid var(--line);
   background: var(--surface);
@@ -184,7 +186,8 @@ h3 {
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 7px;
@@ -204,7 +207,8 @@ textarea {
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   border-color: #7bb9b3;
   box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
 }
@@ -264,7 +268,7 @@ textarea:focus {
 .app-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr) 340px;
+  grid-template-columns: 240px minmax(0, 1fr);
   gap: 16px;
   padding: 16px;
 }
@@ -292,6 +296,32 @@ textarea:focus {
 
 .side-nav button {
   justify-content: flex-start;
+}
+
+.sidebar-score {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #cfe7e3;
+  border-radius: 8px;
+  background: #eff8f6;
+  color: var(--text);
+  text-align: left;
+}
+
+.sidebar-score span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.sidebar-score strong {
+  color: var(--accent);
+  font-size: 30px;
+  line-height: 1;
 }
 
 .month-switcher {
@@ -364,6 +394,47 @@ textarea:focus {
   line-height: 1;
 }
 
+.section-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.section-entry {
+  min-height: 170px;
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  text-align: left;
+  box-shadow: 0 10px 24px rgba(29, 43, 39, 0.05);
+}
+
+.section-entry:hover {
+  border-color: #b7d8d4;
+  background: #f8fbfa;
+}
+
+.section-entry svg {
+  color: var(--accent);
+}
+
+.section-entry span {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.section-entry small {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .checkin-form {
   grid-template-columns: repeat(4, minmax(130px, 1fr));
   align-items: start;
@@ -376,6 +447,10 @@ textarea:focus {
 .action-row {
   align-items: center;
   flex-wrap: wrap;
+}
+
+.secondary-inline-button {
+  width: auto;
 }
 
 .history-panel {
@@ -475,6 +550,22 @@ textarea:focus {
   border-top: 1px solid var(--line);
 }
 
+.standalone {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.scoring-note {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid #cfe7e3;
+  border-radius: 8px;
+  background: #eff8f6;
+  color: #24534e;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
 .mini-chart {
   width: 100%;
   height: auto;
@@ -546,12 +637,11 @@ textarea:focus {
 
 @media (max-width: 1180px) {
   .app-shell {
-    grid-template-columns: 190px minmax(0, 1fr);
+    grid-template-columns: 210px minmax(0, 1fr);
   }
 
-  .trend-panel {
-    grid-column: 2;
-    grid-row: auto;
+  .section-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -649,6 +739,14 @@ textarea:focus {
     grid-column: auto;
   }
 
+  .section-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-entry {
+    min-height: 126px;
+  }
+
   .bottom-nav {
     position: fixed;
     left: 12px;
@@ -656,7 +754,7 @@ textarea:focus {
     bottom: 12px;
     z-index: 20;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     padding: 8px;
     background: rgba(255, 255, 255, 0.94);
     border: 1px solid var(--line);

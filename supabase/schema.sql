@@ -6,16 +6,28 @@ create table if not exists public.checkin_records (
   record_date date not null,
   sleep_hours numeric(4, 2),
   wake_time time,
+  exercise_type text,
   exercise_minutes integer check (exercise_minutes is null or exercise_minutes >= 0),
   steps integer check (steps is null or steps >= 0),
   weight_kg numeric(5, 2),
   target_weight_kg numeric(5, 2),
+  body_fat_pct numeric(5, 2),
   life_discipline integer check (life_discipline is null or life_discipline >= 0),
   impulse_spending integer check (impulse_spending is null or impulse_spending >= 0),
+  impulse_spending_note text,
   emotional_control integer check (emotional_control is null or emotional_control >= 0),
   hygiene_score integer check (hygiene_score is null or hygiene_score between 0 and 2),
   diet_score integer check (diet_score is null or diet_score between 0 and 2),
+  diet_notes text,
   task_completion numeric(3, 2) check (task_completion is null or task_completion between 0 and 1),
+  planned_tasks text,
+  completed_tasks text,
+  tomorrow_tasks text,
+  income_amount numeric(12, 2),
+  expense_food numeric(12, 2),
+  expense_transport numeric(12, 2),
+  expense_shopping numeric(12, 2),
+  expense_other numeric(12, 2),
   review_plan text,
   finance_review text,
   daily_summary text,
@@ -25,6 +37,19 @@ create table if not exists public.checkin_records (
   updated_at timestamptz not null default now(),
   constraint checkin_records_user_date_unique unique (user_id, record_date)
 );
+
+alter table public.checkin_records add column if not exists exercise_type text;
+alter table public.checkin_records add column if not exists body_fat_pct numeric(5, 2);
+alter table public.checkin_records add column if not exists impulse_spending_note text;
+alter table public.checkin_records add column if not exists diet_notes text;
+alter table public.checkin_records add column if not exists planned_tasks text;
+alter table public.checkin_records add column if not exists completed_tasks text;
+alter table public.checkin_records add column if not exists tomorrow_tasks text;
+alter table public.checkin_records add column if not exists income_amount numeric(12, 2);
+alter table public.checkin_records add column if not exists expense_food numeric(12, 2);
+alter table public.checkin_records add column if not exists expense_transport numeric(12, 2);
+alter table public.checkin_records add column if not exists expense_shopping numeric(12, 2);
+alter table public.checkin_records add column if not exists expense_other numeric(12, 2);
 
 create index if not exists checkin_records_user_date_desc_idx
   on public.checkin_records (user_id, record_date desc);
