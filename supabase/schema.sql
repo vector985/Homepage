@@ -38,7 +38,6 @@ create table if not exists public.checkin_records (
 );
 
 alter table public.checkin_records add column if not exists exercise_type text;
-alter table public.checkin_records drop column if exists target_weight_kg;
 alter table public.checkin_records add column if not exists body_fat_pct numeric(5, 2);
 alter table public.checkin_records add column if not exists impulse_spending_note text;
 alter table public.checkin_records add column if not exists diet_notes text;
@@ -50,6 +49,8 @@ alter table public.checkin_records add column if not exists expense_food numeric
 alter table public.checkin_records add column if not exists expense_transport numeric(12, 2);
 alter table public.checkin_records add column if not exists expense_shopping numeric(12, 2);
 alter table public.checkin_records add column if not exists expense_other numeric(12, 2);
+
+notify pgrst, 'reload schema';
 
 create index if not exists checkin_records_user_date_desc_idx
   on public.checkin_records (user_id, record_date desc);

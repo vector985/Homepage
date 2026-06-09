@@ -607,8 +607,12 @@ function StatusMessage({ message }: { message: string }) {
 }
 
 function formatDataError(message: string) {
+  if (message.includes("Could not find") && message.includes("column")) {
+    return "数据库字段尚未同步。请在 Supabase SQL Editor 执行 supabase/upgrade_20260609.sql，然后刷新页面。";
+  }
+
   if (message.includes("checkin_records") || message.includes("schema cache")) {
-    return "数据表尚未创建或字段未同步。请在 Supabase SQL Editor 执行仓库中的 supabase/schema.sql，然后刷新页面。";
+    return "打卡数据表尚未初始化。请在 Supabase SQL Editor 执行 supabase/schema.sql，然后刷新页面。";
   }
 
   if (message.toLowerCase().includes("row-level security") || message.includes("permission denied")) {
