@@ -22,10 +22,20 @@ create table if not exists public.checkin_records (
   planned_tasks text,
   completed_tasks text,
   tomorrow_tasks text,
+  cash_balance numeric(12, 2),
+  bank_balance numeric(12, 2),
+  alipay_balance numeric(12, 2),
+  wechat_balance numeric(12, 2),
+  investment_balance numeric(12, 2),
+  debt_amount numeric(12, 2),
   income_amount numeric(12, 2),
+  expense_fixed numeric(12, 2),
   expense_food numeric(12, 2),
   expense_transport numeric(12, 2),
   expense_shopping numeric(12, 2),
+  expense_health numeric(12, 2),
+  expense_learning numeric(12, 2),
+  expense_entertainment numeric(12, 2),
   expense_other numeric(12, 2),
   review_plan text,
   finance_review text,
@@ -44,10 +54,20 @@ alter table public.checkin_records add column if not exists diet_notes text;
 alter table public.checkin_records add column if not exists planned_tasks text;
 alter table public.checkin_records add column if not exists completed_tasks text;
 alter table public.checkin_records add column if not exists tomorrow_tasks text;
+alter table public.checkin_records add column if not exists cash_balance numeric(12, 2);
+alter table public.checkin_records add column if not exists bank_balance numeric(12, 2);
+alter table public.checkin_records add column if not exists alipay_balance numeric(12, 2);
+alter table public.checkin_records add column if not exists wechat_balance numeric(12, 2);
+alter table public.checkin_records add column if not exists investment_balance numeric(12, 2);
+alter table public.checkin_records add column if not exists debt_amount numeric(12, 2);
 alter table public.checkin_records add column if not exists income_amount numeric(12, 2);
+alter table public.checkin_records add column if not exists expense_fixed numeric(12, 2);
 alter table public.checkin_records add column if not exists expense_food numeric(12, 2);
 alter table public.checkin_records add column if not exists expense_transport numeric(12, 2);
 alter table public.checkin_records add column if not exists expense_shopping numeric(12, 2);
+alter table public.checkin_records add column if not exists expense_health numeric(12, 2);
+alter table public.checkin_records add column if not exists expense_learning numeric(12, 2);
+alter table public.checkin_records add column if not exists expense_entertainment numeric(12, 2);
 alter table public.checkin_records add column if not exists expense_other numeric(12, 2);
 
 notify pgrst, 'reload schema';

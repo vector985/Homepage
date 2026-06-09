@@ -43,10 +43,20 @@ const emptyForm = (date = toLocalDateString()): CheckinFormValues => ({
   planned_tasks: "",
   completed_tasks: "",
   tomorrow_tasks: "",
+  cash_balance: null,
+  bank_balance: null,
+  alipay_balance: null,
+  wechat_balance: null,
+  investment_balance: null,
+  debt_amount: null,
   income_amount: null,
+  expense_fixed: null,
   expense_food: null,
   expense_transport: null,
   expense_shopping: null,
+  expense_health: null,
+  expense_learning: null,
+  expense_entertainment: null,
   expense_other: null,
   review_plan: "",
   finance_review: "",
@@ -437,7 +447,7 @@ function StatusMessage({ message }: { message: string }) {
 
 function formatDataError(message: string) {
   if (message.includes("Could not find") && message.includes("column")) {
-    return "数据库字段尚未同步。请在 Supabase SQL Editor 执行 supabase/upgrade_20260609.sql，然后刷新页面。";
+    return "数据库字段尚未同步。请在 Supabase SQL Editor 执行 supabase/upgrade_20260609_finance.sql，然后刷新页面。";
   }
 
   if (message.includes("checkin_records") || message.includes("schema cache")) {
@@ -508,10 +518,20 @@ function recordToForm(record: CheckinRecord): CheckinFormValues {
     planned_tasks: record.planned_tasks ?? "",
     completed_tasks: record.completed_tasks ?? "",
     tomorrow_tasks: record.tomorrow_tasks ?? "",
+    cash_balance: record.cash_balance,
+    bank_balance: record.bank_balance,
+    alipay_balance: record.alipay_balance,
+    wechat_balance: record.wechat_balance,
+    investment_balance: record.investment_balance,
+    debt_amount: record.debt_amount,
     income_amount: record.income_amount,
+    expense_fixed: record.expense_fixed,
     expense_food: record.expense_food,
     expense_transport: record.expense_transport,
     expense_shopping: record.expense_shopping,
+    expense_health: record.expense_health,
+    expense_learning: record.expense_learning,
+    expense_entertainment: record.expense_entertainment,
     expense_other: record.expense_other,
     review_plan: record.review_plan ?? "",
     finance_review: record.finance_review ?? "",

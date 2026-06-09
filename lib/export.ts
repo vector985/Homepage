@@ -23,10 +23,21 @@ const COLUMNS = [
   ["task_completion", "任务完成率"],
   ["tomorrow_tasks", "明日任务"],
   ["review_plan", "复盘规划"],
+  ["funds_total", "现有资金总额"],
+  ["cash_balance", "现金"],
+  ["bank_balance", "银行卡"],
+  ["alipay_balance", "支付宝"],
+  ["wechat_balance", "微信"],
+  ["investment_balance", "投资账户"],
+  ["debt_amount", "负债"],
   ["income_amount", "收入"],
+  ["expense_fixed", "固定支出"],
   ["expense_food", "餐饮支出"],
   ["expense_transport", "交通支出"],
   ["expense_shopping", "购物支出"],
+  ["expense_health", "医疗健康"],
+  ["expense_learning", "学习成长"],
+  ["expense_entertainment", "娱乐社交"],
   ["expense_other", "其他支出"],
   ["finance_review", "财务统计"],
   ["daily_summary", "一日凝练"],
@@ -42,6 +53,7 @@ export function downloadCsv(records: CheckinRecord[]) {
         ...record,
         record_date: formatCnDate(record.record_date),
         weekday: getWeekday(record.record_date),
+        funds_total: calculateFundsTotal(record),
       };
       return COLUMNS.map(([key]) => escapeCsv(values[key] ?? ""));
     });
@@ -56,6 +68,16 @@ export function downloadCsv(records: CheckinRecord[]) {
   anchor.download = `daily-checkin-${new Date().toISOString().slice(0, 10)}.csv`;
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+function calculateFundsTotal(record: CheckinRecord) {
+  const assets =
+    (record.cash_balance ?? 0) +
+    (record.bank_balance ?? 0) +
+    (record.alipay_balance ?? 0) +
+    (record.wechat_balance ?? 0) +
+    (record.investment_balance ?? 0);
+  return assets - (record.debt_amount ?? 0);
 }
 
 function escapeCsv(value: unknown) {

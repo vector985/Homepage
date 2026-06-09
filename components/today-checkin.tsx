@@ -8,6 +8,7 @@ import {
   ChevronDown,
   CircleDollarSign,
   Dumbbell,
+  FileText,
   ListChecks,
   Plus,
   RotateCcw,
@@ -86,22 +87,25 @@ export function TodayCheckin({
           <NumberField label="步数" value={form.steps} onChange={(value) => onUpdate("steps", value)} />
         </div>
 
-        <div className="inline-control-group">
+        <div className="exercise-block">
           <div className="inline-control-label">
             <Dumbbell size={18} />
             <span>运动</span>
           </div>
-          <SegmentedControl
-            label="运动项目"
-            value={form.exercise_type ?? ""}
-            options={exerciseOptions.map((item) => ({ label: item, value: item }))}
-            onChange={(value) => {
-              onUpdate("exercise_type", value);
-              if (value === "休息") {
-                onUpdate("exercise_minutes", 0);
-              }
-            }}
-          />
+          <div className="field-control exercise-type-field">
+            <span>运动项目</span>
+            <SegmentedControl
+              label="运动项目"
+              value={form.exercise_type ?? ""}
+              options={exerciseOptions.map((item) => ({ label: item, value: item }))}
+              onChange={(value) => {
+                onUpdate("exercise_type", value);
+                if (value === "休息") {
+                  onUpdate("exercise_minutes", 0);
+                }
+              }}
+            />
+          </div>
           <NumberField
             label="时长"
             suffix="分钟"
@@ -165,20 +169,61 @@ export function TodayCheckin({
       <section className="checkin-section detail-section">
         <SectionHeading icon={ListChecks} title="详细记录" description="以下内容都可选，只在有必要时展开。" />
         <div className="detail-list">
-          <DetailDisclosure icon={Utensils} title="饮食、异常与复盘">
+          <DetailDisclosure icon={CircleDollarSign} title="财务统计">
+            <div className="finance-summary">
+              <FinanceMetric label="现有资金总额" value={calculateFundsTotal(form)} tone="primary" />
+              <FinanceMetric label="今日支出" value={calculateExpenseTotal(form)} />
+              <FinanceMetric label="今日净变动" value={(form.income_amount ?? 0) - calculateExpenseTotal(form)} />
+            </div>
+            <h4 className="detail-subtitle">现有资金</h4>
+            <div className="finance-grid balance-grid">
+              <NumberField label="现金" suffix="元" value={form.cash_balance} step="0.01" onChange={(value) => onUpdate("cash_balance", value)} />
+              <NumberField label="银行卡" suffix="元" value={form.bank_balance} step="0.01" onChange={(value) => onUpdate("bank_balance", value)} />
+              <NumberField label="支付宝" suffix="元" value={form.alipay_balance} step="0.01" onChange={(value) => onUpdate("alipay_balance", value)} />
+              <NumberField label="微信" suffix="元" value={form.wechat_balance} step="0.01" onChange={(value) => onUpdate("wechat_balance", value)} />
+              <NumberField label="投资账户" suffix="元" value={form.investment_balance} step="0.01" onChange={(value) => onUpdate("investment_balance", value)} />
+              <NumberField label="负债" suffix="元" value={form.debt_amount} step="0.01" onChange={(value) => onUpdate("debt_amount", value)} />
+            </div>
+            <h4 className="detail-subtitle">今日收支</h4>
+            <div className="finance-grid expense-grid">
+              <NumberField label="收入" suffix="元" value={form.income_amount} step="0.01" onChange={(value) => onUpdate("income_amount", value)} />
+              <NumberField label="固定支出" suffix="元" value={form.expense_fixed} step="0.01" onChange={(value) => onUpdate("expense_fixed", value)} />
+              <NumberField label="餐饮" suffix="元" value={form.expense_food} step="0.01" onChange={(value) => onUpdate("expense_food", value)} />
+              <NumberField label="交通" suffix="元" value={form.expense_transport} step="0.01" onChange={(value) => onUpdate("expense_transport", value)} />
+              <NumberField label="购物" suffix="元" value={form.expense_shopping} step="0.01" onChange={(value) => onUpdate("expense_shopping", value)} />
+              <NumberField label="医疗健康" suffix="元" value={form.expense_health} step="0.01" onChange={(value) => onUpdate("expense_health", value)} />
+              <NumberField label="学习成长" suffix="元" value={form.expense_learning} step="0.01" onChange={(value) => onUpdate("expense_learning", value)} />
+              <NumberField label="娱乐社交" suffix="元" value={form.expense_entertainment} step="0.01" onChange={(value) => onUpdate("expense_entertainment", value)} />
+              <NumberField label="其他" suffix="元" value={form.expense_other} step="0.01" onChange={(value) => onUpdate("expense_other", value)} />
+            </div>
+            <TextAreaField
+              label="财务备注"
+              value={form.finance_review ?? ""}
+              onChange={(value) => onUpdate("finance_review", value)}
+              placeholder="只记录需要复盘的支出或收入。"
+            />
+          </DetailDisclosure>
+
+          <DetailDisclosure icon={Utensils} title="饮食记录">
+            <TextAreaField
+              label="饮食记录"
+              value={form.diet_notes ?? ""}
+              onChange={(value) => onUpdate("diet_notes", value)}
+              placeholder="例如：午餐正常，晚餐略多。"
+            />
+          </DetailDisclosure>
+
+          <DetailDisclosure icon={Sparkles} title="异常复盘">
+            <TextAreaField
+              label="异常复盘"
+              value={form.impulse_spending_note ?? ""}
+              onChange={(value) => onUpdate("impulse_spending_note", value)}
+              placeholder="记录冲动消费、情绪波动或生活失控的触发原因和可替代方案。"
+            />
+          </DetailDisclosure>
+
+          <DetailDisclosure icon={FileText} title="今日复盘">
             <div className="detail-form-grid">
-              <TextAreaField
-                label="饮食记录"
-                value={form.diet_notes ?? ""}
-                onChange={(value) => onUpdate("diet_notes", value)}
-                placeholder="例如：午餐正常，晚餐略多。"
-              />
-              <TextAreaField
-                label="冲动消费复盘"
-                value={form.impulse_spending_note ?? ""}
-                onChange={(value) => onUpdate("impulse_spending_note", value)}
-                placeholder="发生时再记录触发原因和可替代方案。"
-              />
               <TextAreaField
                 label="一句话总结"
                 value={form.daily_summary ?? ""}
@@ -191,28 +236,15 @@ export function TodayCheckin({
                 onChange={(value) => onUpdate("review_plan", value)}
                 placeholder="明天需要继续或改变什么？"
               />
-              <TextAreaField
-                label="明日任务"
-                value={form.tomorrow_tasks ?? ""}
-                onChange={(value) => onUpdate("tomorrow_tasks", value)}
-                placeholder="每行一项，明天可一键带入。"
-              />
             </div>
           </DetailDisclosure>
 
-          <DetailDisclosure icon={CircleDollarSign} title="财务统计">
-            <div className="finance-grid">
-              <NumberField label="收入" suffix="元" value={form.income_amount} step="0.01" onChange={(value) => onUpdate("income_amount", value)} />
-              <NumberField label="餐饮" suffix="元" value={form.expense_food} step="0.01" onChange={(value) => onUpdate("expense_food", value)} />
-              <NumberField label="交通" suffix="元" value={form.expense_transport} step="0.01" onChange={(value) => onUpdate("expense_transport", value)} />
-              <NumberField label="购物" suffix="元" value={form.expense_shopping} step="0.01" onChange={(value) => onUpdate("expense_shopping", value)} />
-              <NumberField label="其他" suffix="元" value={form.expense_other} step="0.01" onChange={(value) => onUpdate("expense_other", value)} />
-            </div>
+          <DetailDisclosure icon={ListChecks} title="明日计划">
             <TextAreaField
-              label="财务备注"
-              value={form.finance_review ?? ""}
-              onChange={(value) => onUpdate("finance_review", value)}
-              placeholder="只记录需要复盘的支出或收入。"
+              label="明日任务"
+              value={form.tomorrow_tasks ?? ""}
+              onChange={(value) => onUpdate("tomorrow_tasks", value)}
+              placeholder="每行一项，明天可一键带入。"
             />
           </DetailDisclosure>
         </div>
@@ -550,6 +582,43 @@ function DetailDisclosure({
       <div className="detail-content">{children}</div>
     </details>
   );
+}
+
+function FinanceMetric({ label, value, tone }: { label: string; value: number; tone?: "primary" }) {
+  return (
+    <div className={tone === "primary" ? "finance-metric primary" : "finance-metric"}>
+      <span>{label}</span>
+      <strong>{formatCurrency(value)}</strong>
+    </div>
+  );
+}
+
+function calculateFundsTotal(values: CheckinFormValues) {
+  return (
+    (values.cash_balance ?? 0) +
+    (values.bank_balance ?? 0) +
+    (values.alipay_balance ?? 0) +
+    (values.wechat_balance ?? 0) +
+    (values.investment_balance ?? 0) -
+    (values.debt_amount ?? 0)
+  );
+}
+
+function calculateExpenseTotal(values: CheckinFormValues) {
+  return (
+    (values.expense_fixed ?? 0) +
+    (values.expense_food ?? 0) +
+    (values.expense_transport ?? 0) +
+    (values.expense_shopping ?? 0) +
+    (values.expense_health ?? 0) +
+    (values.expense_learning ?? 0) +
+    (values.expense_entertainment ?? 0) +
+    (values.expense_other ?? 0)
+  );
+}
+
+function formatCurrency(value: number) {
+  return `¥${value.toFixed(2)}`;
 }
 
 function parseLines(value: string | null | undefined) {

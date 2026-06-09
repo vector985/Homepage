@@ -540,18 +540,18 @@ select:focus {
   color: var(--accent);
 }
 
-.inline-control-group {
+.exercise-block {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) 185px;
-  align-items: end;
+  grid-template-columns: 62px minmax(0, 1fr) 180px;
+  align-items: start;
   gap: 12px;
-  margin-top: 18px;
-  padding-top: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
   border-top: 1px dashed var(--line);
 }
 
 .inline-control-label {
-  min-height: 40px;
+  min-height: 41px;
   display: flex;
   align-items: center;
   gap: 7px;
@@ -797,14 +797,51 @@ select:focus {
   gap: 13px;
 }
 
-.detail-form-grid label:last-child {
-  grid-column: 1 / -1;
-}
-
 .finance-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(100px, 1fr));
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
   gap: 10px;
+}
+
+.finance-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.finance-metric {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+}
+
+.finance-metric span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.finance-metric strong {
+  color: var(--text);
+  font-size: 20px;
+}
+
+.finance-metric.primary {
+  border-color: #cce4df;
+  background: var(--surface-accent);
+}
+
+.finance-metric.primary strong {
+  color: var(--accent);
+}
+
+.detail-subtitle {
+  margin: 4px 0 -2px;
+  color: #354340;
+  font-size: 13px;
 }
 
 .save-bar {
@@ -1185,7 +1222,7 @@ select:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .inline-control-group {
+  .exercise-block {
     grid-template-columns: 1fr;
     align-items: stretch;
   }
@@ -1197,13 +1234,13 @@ select:focus {
   .behavior-row,
   .habit-grid,
   .detail-form-grid,
+  .finance-summary,
   .score-list,
   .stat-grid {
     grid-template-columns: 1fr;
   }
 
-  .habit-control:last-child,
-  .detail-form-grid label:last-child {
+  .habit-control:last-child {
     grid-column: auto;
   }
 
