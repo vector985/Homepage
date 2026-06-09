@@ -1,33 +1,27 @@
 "use client";
 
 import { MiniChart } from "@/components/mini-chart";
+import { TodayCheckin } from "@/components/today-checkin";
 import { formatCnDate, getMonthRange, getWeekday, shiftMonth, toLocalDateString, toMonthKey } from "@/lib/date";
 import { downloadCsv } from "@/lib/export";
-import { calculateScore, calculateSleepStart } from "@/lib/scoring";
+import { calculateScore } from "@/lib/scoring";
 import { buildTrendPoints, calculateMonthStats } from "@/lib/stats";
 import type { CheckinFormValues, CheckinRecord } from "@/lib/types";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import {
-  ArrowLeft,
   BarChart3,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
   Download,
-  HeartPulse,
   History,
-  ListChecks,
   LogOut,
-  Save,
-  Star,
   Trash2,
-  WalletCards,
 } from "lucide-react";
-import { useCallback, useEffect, useId, useMemo, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-type View = "today" | "health" | "habits" | "tasks" | "finance" | "score" | "history" | "trend";
-type UpdateForm = <K extends keyof CheckinFormValues>(key: K, value: CheckinFormValues[K]) => void;
+type View = "today" | "score" | "history" | "trend";
 
 const emptyForm = (date = toLocalDateString()): CheckinFormValues => ({
   record_date: date,
@@ -59,39 +53,11 @@ const emptyForm = (date = toLocalDateString()): CheckinFormValues => ({
   daily_summary: "",
 });
 
-const sections = [
-  {
-    view: "health" as const,
-    icon: HeartPulse,
-    title: "健康生活",
-    desc: "睡眠、起床、运动、体重体脂、洗漱护理和饮食",
-  },
-  {
-    view: "habits" as const,
-    icon: Star,
-    title: "习惯养成",
-    desc: "情绪控制、冲动消费和生活节制",
-  },
-  {
-    view: "tasks" as const,
-    icon: ListChecks,
-    title: "每日任务",
-    desc: "今日任务、完成情况、复盘和明日安排",
-  },
-  {
-    view: "finance" as const,
-    icon: WalletCards,
-    title: "财务统计",
-    desc: "收入、支出分类和财务复盘",
-  },
-];
-
-const exerciseOptions = ["臀腿", "胸臂", "核心", "有氧", "拉伸", "休息", "其他"];
-
 export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: User }) {
   const [selectedDate, setSelectedDate] = useState(toLocalDateString());
   const [monthKey, setMonthKey] = useState(toMonthKey(toLocalDateString()));
   const [records, setRecords] = useState<CheckinRecord[]>([]);
+  const [previousRecord, setPreviousRecord] = useState<CheckinRecord | null>(null);
   const [form, setForm] = useState<CheckinFormValues>(() => emptyForm(selectedDate));
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -101,16 +67,13 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
   const score = useMemo(() => calculateScore(form), [form]);
   const trendPoints = useMemo(() => buildTrendPoints(records), [records]);
   const stats = useMemo(() => calculateMonthStats(records), [records]);
-  const sleepStart = useMemo(
-    () => calculateSleepStart(form.wake_time, form.sleep_hours),
-    [form.wake_time, form.sleep_hours],
-  );
 
   const loadMonth = useCallback(async (clearMessage = true) => {
     setLoading(true);
     if (clearMessage) {
       setMessage("");
     }
+
     const range = getMonthRange(monthKey);
     const { data, error } = await supabase
       .from("checkin_records")
@@ -136,8 +99,39 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
     setForm(existing ? recordToForm(existing) : emptyForm(selectedDate));
   }, [records, selectedDate]);
 
+  useEffect(() => {
+    let active = true;
+    const previousDate = shiftDate(selectedDate, -1);
+
+    async function loadPreviousRecord() {
+      const cached = records.find((record) => record.record_date === previousDate);
+      if (cached) {
+        setPreviousRecord(cached);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("checkin_records")
+        .select("*")
+        .eq("record_date", previousDate)
+        .maybeSingle();
+
+      if (active) {
+        setPreviousRecord((data as CheckinRecord | null) ?? null);
+      }
+    }
+
+    loadPreviousRecord();
+    return () => {
+      active = false;
+    };
+  }, [records, selectedDate, supabase]);
+
   function update<K extends keyof CheckinFormValues>(key: K, value: CheckinFormValues[K]) {
     setForm((current) => ({ ...current, [key]: value }));
+    if (message === "已保存。") {
+      setMessage("");
+    }
   }
 
   function onDateChange(value: string) {
@@ -196,15 +190,17 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
     downloadCsv((data ?? []) as CheckinRecord[]);
   }
 
-  const isEditingSection = ["health", "habits", "tasks", "finance"].includes(view);
+  function openRecord(date: string) {
+    onDateChange(date);
+    setView("today");
+  }
 
   return (
-    <main className="app-shell compact-shell">
+    <main className="app-shell">
       <aside className="sidebar">
-        <div>
-          <p className="eyebrow">每日打卡</p>
-          <h1>今日状态</h1>
-          <p className="muted">记录健康、习惯、任务和财务</p>
+        <div className="sidebar-heading">
+          <h1>每日打卡</h1>
+          <p>少填一点，坚持久一点。</p>
         </div>
 
         <button className="sidebar-score" onClick={() => setView("score")}>
@@ -213,8 +209,8 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
         </button>
 
         <nav className="side-nav" aria-label="主导航">
-          <NavButton active={view === "today" || isEditingSection} onClick={() => setView("today")} icon={CalendarDays} label="今日填写" />
-          <NavButton active={view === "score"} onClick={() => setView("score")} icon={ClipboardList} label="今日评分" />
+          <NavButton active={view === "today"} onClick={() => setView("today")} icon={CalendarDays} label="今日打卡" />
+          <NavButton active={view === "score"} onClick={() => setView("score")} icon={ClipboardList} label="评分明细" />
           <NavButton active={view === "history"} onClick={() => setView("history")} icon={History} label="历史记录" />
           <NavButton active={view === "trend"} onClick={() => setView("trend")} icon={BarChart3} label="趋势分析" />
         </nav>
@@ -229,67 +225,59 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
           </button>
         </div>
 
-        <button className="secondary-button" onClick={exportAllCsv}>
-          <Download size={17} />
-          导出 CSV
-        </button>
-        <button className="ghost-button" onClick={() => supabase.auth.signOut()}>
-          <LogOut size={17} />
-          退出登录
-        </button>
+        <div className="sidebar-actions">
+          <button className="secondary-button" onClick={exportAllCsv}>
+            <Download size={17} />
+            导出 CSV
+          </button>
+          <button className="ghost-button" onClick={() => supabase.auth.signOut()}>
+            <LogOut size={17} />
+            退出登录
+          </button>
+        </div>
       </aside>
 
-      <section className="content-panel wide-panel mobile-section active">
-        <div className="panel-heading">
+      <section className="content-panel">
+        <header className="workspace-header">
           <div>
-            <p className="eyebrow">{viewTitle(view)}</p>
+            <p>{viewTitle(view)}</p>
             <h2>
               {formatCnDate(selectedDate)} 周{getWeekday(selectedDate)}
             </h2>
           </div>
           <label className="date-input">
-            日期
+            <span>切换日期</span>
             <input type="date" value={selectedDate} onChange={(event) => onDateChange(event.target.value)} />
           </label>
-        </div>
-
-        <div className="score-strip">
-          <div>
-            <span>今日评分</span>
-            <strong>{score.total}</strong>
-          </div>
-          <p>评分随填写实时更新</p>
-        </div>
+        </header>
 
         {message ? <StatusMessage message={message} /> : null}
 
-        {view === "today" ? <TodayHub onOpen={setView} /> : null}
-        {view === "health" ? <HealthForm form={form} update={update} sleepStart={sleepStart} /> : null}
-        {view === "habits" ? <HabitsForm form={form} update={update} /> : null}
-        {view === "tasks" ? <TasksForm form={form} update={update} /> : null}
-        {view === "finance" ? <FinanceForm form={form} update={update} /> : null}
+        {view === "today" ? (
+          <TodayCheckin
+            form={form}
+            previousRecord={previousRecord}
+            score={score}
+            saving={saving}
+            onUpdate={update}
+            onSave={saveRecord}
+          />
+        ) : null}
         {view === "score" ? <ScorePanel score={score} /> : null}
         {view === "history" ? (
-          <HistoryPanel records={records} monthKey={monthKey} loading={loading} onDateChange={onDateChange} onDelete={deleteRecord} />
+          <HistoryPanel
+            records={records}
+            monthKey={monthKey}
+            loading={loading}
+            onDateChange={openRecord}
+            onDelete={deleteRecord}
+          />
         ) : null}
         {view === "trend" ? <TrendPanel stats={stats} trendPoints={trendPoints} /> : null}
-
-        {isEditingSection ? (
-          <div className="action-row">
-            <button className="primary-button" onClick={saveRecord} disabled={saving}>
-              <Save size={17} />
-              {saving ? "保存中..." : "保存记录"}
-            </button>
-            <button className="secondary-inline-button" onClick={() => setView("today")}>
-              <ArrowLeft size={17} />
-              返回今日填写
-            </button>
-          </div>
-        ) : null}
       </section>
 
       <nav className="bottom-nav" aria-label="移动端导航">
-        <NavButton active={view === "today" || isEditingSection} onClick={() => setView("today")} icon={CalendarDays} label="填写" />
+        <NavButton active={view === "today"} onClick={() => setView("today")} icon={CalendarDays} label="打卡" />
         <NavButton active={view === "score"} onClick={() => setView("score")} icon={ClipboardList} label="评分" />
         <NavButton active={view === "history"} onClick={() => setView("history")} icon={History} label="历史" />
         <NavButton active={view === "trend"} onClick={() => setView("trend")} icon={BarChart3} label="趋势" />
@@ -298,188 +286,28 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
   );
 }
 
-function TodayHub({ onOpen }: { onOpen: (view: View) => void }) {
-  return (
-    <div className="section-grid">
-      {sections.map((section) => {
-        const Icon = section.icon;
-        return (
-          <button key={section.view} className="section-entry" onClick={() => onOpen(section.view)}>
-            <Icon size={24} />
-            <span>{section.title}</span>
-            <small>{section.desc}</small>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function HealthForm({ form, update, sleepStart }: { form: CheckinFormValues; update: UpdateForm; sleepStart: string }) {
-  return (
-    <form className="checkin-form">
-      <NumberField
-        label="睡眠/h"
-        value={form.sleep_hours}
-        onChange={(value) => update("sleep_hours", value)}
-        step="0.1"
-        quickValues={[
-          { label: "6.5", value: 6.5 },
-          { label: "7", value: 7 },
-          { label: "8", value: 8 },
-        ]}
-      />
-      <label>
-        起床时间
-        <input type="time" value={form.wake_time ?? ""} onChange={(event) => update("wake_time", event.target.value || null)} />
-      </label>
-      <ReadOnlyField label="推算入睡时间" value={sleepStart || "填写睡眠和起床后自动计算"} />
-      <SelectField label="运动项目" value={form.exercise_type ?? ""} onChange={(value) => update("exercise_type", value)} options={exerciseOptions} />
-      <NumberField
-        label="运动时长/mins"
-        value={form.exercise_minutes}
-        onChange={(value) => update("exercise_minutes", value)}
-        quickValues={[
-          { label: "15", value: 15 },
-          { label: "30", value: 30 },
-          { label: "45", value: 45 },
-        ]}
-      />
-      <NumberField label="步数" value={form.steps} onChange={(value) => update("steps", value)} />
-      <NumberField label="体重/kg" value={form.weight_kg} onChange={(value) => update("weight_kg", value)} step="0.1" />
-      <NumberField label="体脂率/%" value={form.body_fat_pct} onChange={(value) => update("body_fat_pct", value)} step="0.1" />
-      <NumberField
-        label="洗漱护理 0-2"
-        value={form.hygiene_score}
-        onChange={(value) => update("hygiene_score", value)}
-        max={2}
-        quickValues={scoreQuickValues}
-      />
-      <NumberField
-        label="饮食执行 0-2"
-        value={form.diet_score}
-        onChange={(value) => update("diet_score", value)}
-        max={2}
-        quickValues={scoreQuickValues}
-      />
-      <label className="wide">
-        饮食记录
-        <textarea value={form.diet_notes ?? ""} onChange={(event) => update("diet_notes", event.target.value)} rows={4} />
-      </label>
-      <label className="wide">
-        一日凝练
-        <textarea value={form.daily_summary ?? ""} onChange={(event) => update("daily_summary", event.target.value)} rows={3} />
-      </label>
-    </form>
-  );
-}
-
-function HabitsForm({ form, update }: { form: CheckinFormValues; update: UpdateForm }) {
-  return (
-    <form className="checkin-form">
-      <NumberField
-        label="情绪失控次数"
-        value={form.emotional_control}
-        onChange={(value) => update("emotional_control", value)}
-        quickValues={countQuickValues}
-      />
-      <NumberField
-        label="冲动消费次数"
-        value={form.impulse_spending}
-        onChange={(value) => update("impulse_spending", value)}
-        quickValues={countQuickValues}
-      />
-      <NumberField
-        label="生活失控次数"
-        value={form.life_discipline}
-        onChange={(value) => update("life_discipline", value)}
-        quickValues={countQuickValues}
-      />
-      <label className="wide">
-        冲动消费复盘
-        <textarea
-          value={form.impulse_spending_note ?? ""}
-          onChange={(event) => update("impulse_spending_note", event.target.value)}
-          rows={5}
-          placeholder="记录触发原因、当时状态、是否可替代，而不是只看金额。"
-        />
-      </label>
-    </form>
-  );
-}
-
-function TasksForm({ form, update }: { form: CheckinFormValues; update: UpdateForm }) {
-  return (
-    <form className="checkin-form">
-      <label className="wide">
-        今日应完成任务
-        <textarea value={form.planned_tasks ?? ""} onChange={(event) => update("planned_tasks", event.target.value)} rows={5} />
-      </label>
-      <label className="wide">
-        已完成任务
-        <textarea value={form.completed_tasks ?? ""} onChange={(event) => update("completed_tasks", event.target.value)} rows={5} />
-      </label>
-      <NumberField
-        label="任务完成率 0-1"
-        value={form.task_completion}
-        onChange={(value) => update("task_completion", value)}
-        step="0.05"
-        max={1}
-        quickValues={[
-          { label: "0", value: 0 },
-          { label: "一半", value: 0.5 },
-          { label: "大半", value: 0.75 },
-          { label: "完成", value: 1 },
-        ]}
-      />
-      <label className="wide">
-        明日任务推荐
-        <textarea value={form.tomorrow_tasks ?? ""} onChange={(event) => update("tomorrow_tasks", event.target.value)} rows={5} />
-      </label>
-      <label className="wide">
-        复盘规划与第二天安排
-        <textarea value={form.review_plan ?? ""} onChange={(event) => update("review_plan", event.target.value)} rows={5} />
-      </label>
-    </form>
-  );
-}
-
-function FinanceForm({ form, update }: { form: CheckinFormValues; update: UpdateForm }) {
-  const expenseTotal =
-    (form.expense_food ?? 0) + (form.expense_transport ?? 0) + (form.expense_shopping ?? 0) + (form.expense_other ?? 0);
-
-  return (
-    <form className="checkin-form">
-      <NumberField label="收入" value={form.income_amount} onChange={(value) => update("income_amount", value)} step="0.01" />
-      <NumberField label="餐饮支出" value={form.expense_food} onChange={(value) => update("expense_food", value)} step="0.01" />
-      <NumberField label="交通支出" value={form.expense_transport} onChange={(value) => update("expense_transport", value)} step="0.01" />
-      <NumberField label="购物支出" value={form.expense_shopping} onChange={(value) => update("expense_shopping", value)} step="0.01" />
-      <NumberField label="其他支出" value={form.expense_other} onChange={(value) => update("expense_other", value)} step="0.01" />
-      <ReadOnlyField label="支出合计" value={expenseTotal.toFixed(2)} />
-      <label className="wide">
-        财务统计与复盘
-        <textarea value={form.finance_review ?? ""} onChange={(event) => update("finance_review", event.target.value)} rows={6} />
-      </label>
-    </form>
-  );
-}
-
 function ScorePanel({ score }: { score: ReturnType<typeof calculateScore> }) {
   return (
-    <div className="score-detail standalone">
-      <p className="scoring-note">
-        评分不再依赖主观三档自评，改为行为证据优先：睡眠、起床、运动、步数、任务、复盘和财务记录按完成度给分；情绪、冲动消费、生活节制按事件次数扣分，并鼓励记录触发原因。
-      </p>
-      {score.items.map((item) => (
-        <div key={item.key} className="score-row">
-          <span>{item.label}</span>
-          <strong>
-            {item.earned}/{item.max}
-          </strong>
-          <small>{item.reason}</small>
+    <section className="score-detail">
+      <div className="score-summary">
+        <strong>{score.total}</strong>
+        <div>
+          <h3>{scoreLabel(score.total)}</h3>
+          <p>评分只看核心行为，体重、财务和文字复盘不直接计分。</p>
         </div>
-      ))}
-    </div>
+      </div>
+      <div className="score-list">
+        {score.items.map((item) => (
+          <div key={item.key} className="score-row">
+            <span>{item.label}</span>
+            <strong>
+              {item.earned}/{item.max}
+            </strong>
+            <small>{item.reason}</small>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -498,9 +326,12 @@ function HistoryPanel({
 }) {
   return (
     <section>
-      <div className="panel-heading subheading">
-        <h3>{monthKey}</h3>
-        <span className="count-pill">{loading ? "加载中" : `${records.length} 天`}</span>
+      <div className="section-heading">
+        <div>
+          <h3>{monthKey}</h3>
+          <p>点击日期可继续补充当天记录。</p>
+        </div>
+        <span className="count-label">{loading ? "加载中" : `${records.length} 天`}</span>
       </div>
       <div className="history-table-wrap">
         <table className="history-table">
@@ -509,7 +340,6 @@ function HistoryPanel({
               <th>日期</th>
               <th>评分</th>
               <th>体重</th>
-              <th>体脂</th>
               <th>运动</th>
               <th>步数</th>
               <th>任务</th>
@@ -526,12 +356,11 @@ function HistoryPanel({
                 </td>
                 <td>{record.score}</td>
                 <td>{record.weight_kg ?? "-"}</td>
-                <td>{record.body_fat_pct ?? "-"}</td>
-                <td>{record.exercise_minutes ?? "-"}</td>
+                <td>{record.exercise_minutes ? `${record.exercise_minutes} 分钟` : "-"}</td>
                 <td>{record.steps ?? "-"}</td>
-                <td>{record.task_completion ?? "-"}</td>
+                <td>{formatCompletion(record.task_completion)}</td>
                 <td>
-                  <button className="icon-button" aria-label="删除记录" onClick={() => onDelete(record)}>
+                  <button className="icon-button" aria-label="删除记录" title="删除记录" onClick={() => onDelete(record)}>
                     <Trash2 size={16} />
                   </button>
                 </td>
@@ -539,7 +368,7 @@ function HistoryPanel({
             ))}
             {records.length === 0 ? (
               <tr>
-                <td colSpan={8}>本月暂无记录。</td>
+                <td colSpan={7}>本月暂无记录。</td>
               </tr>
             ) : null}
           </tbody>
@@ -566,7 +395,7 @@ function TrendPanel({ stats, trendPoints }: { stats: ReturnType<typeof calculate
         <div className="chart-heading">
           <h3>体重 / 7日均重</h3>
           <div className="chart-legend" aria-label="图例">
-            <span className="legend-main">体重</span>
+            <span>体重</span>
             <span className="legend-average">7日均重</span>
           </div>
         </div>
@@ -600,7 +429,7 @@ function StatusMessage({ message }: { message: string }) {
 
   return (
     <div className={isError ? "status-message error" : "status-message success"}>
-      <strong>{isError ? "需要处理" : "状态"}</strong>
+      <strong>{isError ? "需要处理" : "已完成"}</strong>
       <span>{message}</span>
     </div>
   );
@@ -622,106 +451,6 @@ function formatDataError(message: string) {
   return `操作失败：${message}`;
 }
 
-function NumberField({
-  label,
-  value,
-  onChange,
-  step = "1",
-  min = 0,
-  max,
-  quickValues = [],
-}: {
-  label: string;
-  value: number | null;
-  onChange: (value: number | null) => void;
-  step?: string;
-  min?: number;
-  max?: number;
-  quickValues?: QuickValue[];
-}) {
-  const id = useId();
-
-  function updateValue(nextValue: string) {
-    if (nextValue === "") {
-      onChange(null);
-      return;
-    }
-
-    const parsed = Number(nextValue);
-    if (!Number.isFinite(parsed)) {
-      onChange(null);
-      return;
-    }
-
-    onChange(clampNumber(parsed, min, max));
-  }
-
-  return (
-    <div className="field-control">
-      <label htmlFor={id}>{label}</label>
-      <input
-        id={id}
-        type="number"
-        value={value ?? ""}
-        step={step}
-        min={min}
-        max={max}
-        inputMode="decimal"
-        onChange={(event: ChangeEvent<HTMLInputElement>) => updateValue(event.target.value)}
-      />
-      {quickValues.length > 0 ? (
-        <div className="quick-value-row" aria-label={`${label} 快捷填写`}>
-          {quickValues.map((item) => (
-            <button
-              key={`${label}-${item.value}`}
-              type="button"
-              className={value === item.value ? "active" : ""}
-              onClick={() => onChange(item.value)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function SelectField({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: string[];
-}) {
-  return (
-    <label>
-      {label}
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
-        <option value="">未选择</option>
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function ReadOnlyField({ label, value }: { label: string; value: string }) {
-  return (
-    <label>
-      {label}
-      <input value={value} readOnly />
-    </label>
-  );
-}
-
 function Metric({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="metric">
@@ -731,40 +460,31 @@ function Metric({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-type QuickValue = {
-  label: string;
-  value: number;
-};
-
-const scoreQuickValues: QuickValue[] = [
-  { label: "0", value: 0 },
-  { label: "1", value: 1 },
-  { label: "2", value: 2 },
-];
-
-const countQuickValues: QuickValue[] = [
-  { label: "0次", value: 0 },
-  { label: "1次", value: 1 },
-  { label: "2次", value: 2 },
-];
-
-function clampNumber(value: number, min: number, max?: number) {
-  const lowerBounded = Math.max(min, value);
-  return typeof max === "number" ? Math.min(max, lowerBounded) : lowerBounded;
-}
-
 function viewTitle(view: View) {
   const titleMap: Record<View, string> = {
-    today: "今日填写",
-    health: "健康生活",
-    habits: "习惯养成",
-    tasks: "每日任务",
-    finance: "财务统计",
-    score: "今日评分",
+    today: "今日打卡",
+    score: "评分明细",
     history: "历史记录",
     trend: "趋势分析",
   };
   return titleMap[view];
+}
+
+function scoreLabel(score: number) {
+  if (score >= 85) return "状态很好";
+  if (score >= 70) return "整体稳定";
+  if (score >= 50) return "完成了关键部分";
+  return "先记录，再调整";
+}
+
+function formatCompletion(value: number | null) {
+  return typeof value === "number" ? `${Math.round(value * 100)}%` : "-";
+}
+
+function shiftDate(date: string, amount: number) {
+  const value = new Date(`${date}T12:00:00`);
+  value.setDate(value.getDate() + amount);
+  return toLocalDateString(value);
 }
 
 function recordToForm(record: CheckinRecord): CheckinFormValues {
