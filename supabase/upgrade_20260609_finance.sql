@@ -1,5 +1,5 @@
--- Run this once in Supabase SQL Editor.
--- It adds finance management fields used by the current app and does not delete data.
+-- Legacy upgrade kept for projects that used the earlier detailed-fund UI.
+-- The current app uses supabase/upgrade_20260610_checkin_refine.sql and writes funds_total instead.
 
 alter table public.checkin_records add column if not exists cash_balance numeric(12, 2);
 alter table public.checkin_records add column if not exists bank_balance numeric(12, 2);

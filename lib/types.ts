@@ -29,16 +29,15 @@ export type CheckinRecord = {
   hygiene_score: number | null;
   diet_score: number | null;
   diet_notes: string | null;
+  breakfast_notes: string | null;
+  lunch_notes: string | null;
+  dinner_notes: string | null;
+  snack_notes: string | null;
   task_completion: number | null;
   planned_tasks: string | null;
   completed_tasks: string | null;
   tomorrow_tasks: string | null;
-  cash_balance: number | null;
-  bank_balance: number | null;
-  alipay_balance: number | null;
-  wechat_balance: number | null;
-  investment_balance: number | null;
-  debt_amount: number | null;
+  funds_total: number | null;
   income_amount: number | null;
   expense_fixed: number | null;
   expense_food: number | null;
@@ -68,4 +67,13 @@ export type TrendPoint = {
   score: number | null;
   weight: number | null;
   movingAverageWeight: number | null;
+  exerciseMinutes: number | null;
+  expenseTotal: number;
+  fundsTotal: number | null;
+};
+
+export type FinanceCategoryTotal = {
+  key: string;
+  label: string;
+  value: number;
 };

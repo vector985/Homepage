@@ -39,16 +39,16 @@ export function calculateSleepStart(wakeTime: string | null, sleepHours: number 
 
 export function calculateScore(values: CheckinFormValues): ScoreDetail {
   const items: ScoreItem[] = [
-    scoreItem("sleep_hours", "睡眠时长", 20, scoreSleep(values.sleep_hours)),
+    scoreItem("sleep_hours", "睡眠时长", 15, scoreSleep(values.sleep_hours)),
     scoreItem("wake_time", "起床时间", 10, scoreWakeTime(values.wake_time)),
     scoreItem("exercise_minutes", "运动执行", 15, scoreExercise(values.exercise_minutes, values.exercise_type)),
     scoreItem("steps", "日常活动", 10, scoreSteps(values.steps)),
-    scoreItem("hygiene_score", "洗漱护理", 5, scoreDefinedLevel(values.hygiene_score, 5)),
-    scoreItem("diet_score", "饮食执行", 10, scoreDefinedLevel(values.diet_score, 10)),
-    scoreItem("emotional_control", "情绪控制", 5, scoreEventCount(values.emotional_control, 5)),
-    scoreItem("impulse_spending", "冲动消费", 5, scoreEventCount(values.impulse_spending, 5)),
-    scoreItem("life_discipline", "生活节制", 5, scoreEventCount(values.life_discipline, 5)),
-    scoreItem("task_completion", "任务完成", 15, scoreTaskCompletion(values.task_completion)),
+    scoreItem("hygiene_score", "洗漱护理", 10, scoreHygiene(values.hygiene_score)),
+    scoreItem("diet_score", "饮食执行", 8, scoreDiet(values.diet_score)),
+    scoreItem("emotional_control", "情绪控制", 8, scoreQualityLevel(values.emotional_control, 8, ["失控", "有波动", "稳定"])),
+    scoreItem("impulse_spending", "冲动消费", 7, scoreQualityLevel(values.impulse_spending, 7, ["严重", "一次", "没有"])),
+    scoreItem("life_discipline", "生活节制", 7, scoreQualityLevel(values.life_discipline, 7, ["失控", "一般", "节制"])),
+    scoreItem("task_completion", "任务完成", 10, scoreTaskCompletion(values.task_completion)),
   ];
 
   return {
@@ -60,11 +60,11 @@ export function calculateScore(values: CheckinFormValues): ScoreDetail {
 function scoreSleep(value: number | null) {
   const hours = numberValue(value);
   if (hours === null) return { earned: 0, reason: "尚未记录" };
-  if (hours >= 7 && hours <= 8.5) return { earned: 20, reason: "达到 7-8.5 小时" };
+  if (hours >= 7 && hours <= 8.5) return { earned: 15, reason: "达到 7-8.5 小时" };
   if ((hours >= 6 && hours < 7) || (hours > 8.5 && hours <= 9.5)) {
-    return { earned: 12, reason: "接近建议范围" };
+    return { earned: 9, reason: "接近建议范围" };
   }
-  if (hours >= 5) return { earned: 5, reason: "睡眠偏少或偏多" };
+  if (hours >= 5) return { earned: 4, reason: "睡眠偏少或偏多" };
   return { earned: 0, reason: "睡眠明显不足" };
 }
 
@@ -96,28 +96,38 @@ function scoreSteps(value: number | null) {
   return { earned: 0, reason: "日常活动较少" };
 }
 
-function scoreDefinedLevel(value: number | null, max: number) {
+function scoreHygiene(value: number | null) {
   const level = numberValue(value);
   if (level === null) return { earned: 0, reason: "尚未记录" };
-  if (level >= 2) return { earned: max, reason: "完整完成" };
-  if (level >= 1) return { earned: Math.round(max * 0.6), reason: "基本完成" };
-  return { earned: 0, reason: "未完成或偏离计划" };
+  if (level >= 2) return { earned: 10, reason: "早晚两次洗漱护理" };
+  if (level >= 1) return { earned: 5, reason: "完成一次洗漱护理" };
+  return { earned: 0, reason: "未完成洗漱护理" };
 }
 
-function scoreEventCount(value: number | null, max: number) {
-  const count = numberValue(value);
-  if (count === null) return { earned: 0, reason: "尚未记录" };
-  if (count === 0) return { earned: max, reason: "今天没有发生" };
-  if (count === 1) return { earned: Math.round(max * 0.4), reason: "发生一次" };
-  return { earned: 0, reason: "发生多次" };
+function scoreDiet(value: number | null) {
+  const level = numberValue(value);
+  if (level === null) return { earned: 0, reason: "尚未记录" };
+  if (level >= 4) return { earned: 8, reason: "四餐记录且执行按计划" };
+  if (level >= 3) return { earned: 6, reason: "大体按计划" };
+  if (level >= 2) return { earned: 4, reason: "基本可接受" };
+  if (level >= 1) return { earned: 2, reason: "偏离较多" };
+  return { earned: 0, reason: "明显偏离计划" };
+}
+
+function scoreQualityLevel(value: number | null, max: number, labels: [string, string, string]) {
+  const level = numberValue(value);
+  if (level === null) return { earned: 0, reason: "尚未记录" };
+  if (level >= 2) return { earned: max, reason: labels[2] };
+  if (level >= 1) return { earned: Math.ceil(max * 0.5), reason: labels[1] };
+  return { earned: 0, reason: labels[0] };
 }
 
 function scoreTaskCompletion(value: number | null) {
   const completion = numberValue(value);
   if (completion === null) return { earned: 0, reason: "尚未添加任务" };
-  if (completion >= 1) return { earned: 15, reason: "全部完成" };
-  if (completion >= 0.75) return { earned: 12, reason: "完成大部分任务" };
-  if (completion >= 0.5) return { earned: 8, reason: "完成一半任务" };
-  if (completion > 0) return { earned: 4, reason: "已开始推进" };
+  if (completion >= 1) return { earned: 10, reason: "全部完成" };
+  if (completion >= 0.8) return { earned: 8, reason: "完成 80% 以上任务" };
+  if (completion >= 0.5) return { earned: 5, reason: "完成一半任务" };
+  if (completion > 0) return { earned: 2, reason: "已开始推进" };
   return { earned: 0, reason: "尚未完成任务" };
 }

@@ -1,5 +1,5 @@
--- Run this once in Supabase SQL Editor.
--- It only adds fields required by the current app and does not delete data.
+-- Run this once in Supabase SQL Editor after pulling the 2026-06-10 check-in refinements.
+-- It adds the current MVP fields, updates scoring constraints, and does not delete old data.
 
 alter table public.checkin_records add column if not exists exercise_type text;
 alter table public.checkin_records add column if not exists body_fat_pct numeric(5, 2);
@@ -22,6 +22,7 @@ alter table public.checkin_records add column if not exists expense_health numer
 alter table public.checkin_records add column if not exists expense_learning numeric(12, 2);
 alter table public.checkin_records add column if not exists expense_entertainment numeric(12, 2);
 alter table public.checkin_records add column if not exists expense_other numeric(12, 2);
+alter table public.checkin_records add column if not exists finance_review text;
 
 alter table public.checkin_records drop constraint if exists checkin_records_life_discipline_check;
 alter table public.checkin_records add constraint checkin_records_life_discipline_check

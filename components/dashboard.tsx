@@ -1,6 +1,6 @@
 "use client";
 
-import { MiniChart } from "@/components/mini-chart";
+import { MiniBarChart, MiniChart, MiniPieChart } from "@/components/mini-chart";
 import { TodayCheckin } from "@/components/today-checkin";
 import { formatCnDate, getMonthRange, getWeekday, shiftMonth, toLocalDateString, toMonthKey } from "@/lib/date";
 import { downloadCsv } from "@/lib/export";
@@ -39,16 +39,15 @@ const emptyForm = (date = toLocalDateString()): CheckinFormValues => ({
   hygiene_score: null,
   diet_score: null,
   diet_notes: "",
+  breakfast_notes: "",
+  lunch_notes: "",
+  dinner_notes: "",
+  snack_notes: "",
   task_completion: null,
   planned_tasks: "",
   completed_tasks: "",
   tomorrow_tasks: "",
-  cash_balance: null,
-  bank_balance: null,
-  alipay_balance: null,
-  wechat_balance: null,
-  investment_balance: null,
-  debt_amount: null,
+  funds_total: null,
   income_amount: null,
   expense_fixed: null,
   expense_food: null,
@@ -77,6 +76,10 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
   const score = useMemo(() => calculateScore(form), [form]);
   const trendPoints = useMemo(() => buildTrendPoints(records), [records]);
   const stats = useMemo(() => calculateMonthStats(records), [records]);
+  const hasExistingRecord = useMemo(
+    () => records.some((record) => record.record_date === selectedDate),
+    [records, selectedDate],
+  );
 
   const loadMonth = useCallback(async (clearMessage = true) => {
     setLoading(true);
@@ -267,7 +270,7 @@ export function Dashboard({ supabase, user }: { supabase: SupabaseClient; user: 
           <TodayCheckin
             form={form}
             previousRecord={previousRecord}
-            score={score}
+            hasExistingRecord={hasExistingRecord}
             saving={saving}
             onUpdate={update}
             onSave={saveRecord}
@@ -394,14 +397,34 @@ function TrendPanel({ stats, trendPoints }: { stats: ReturnType<typeof calculate
       <div className="stat-grid">
         <Metric label="平均分" value={stats.averageScore} />
         <Metric label="打卡天数" value={stats.checkinDays} />
-        <Metric label="80分以上" value={stats.goodDays} />
+        <Metric label="80分以上" value={`${stats.goodDays}天 / ${stats.highScoreRate}%`} />
         <Metric label="最新体重" value={stats.latestWeight ?? "-"} />
+        <Metric label="现有资金" value={formatMoney(stats.latestFunds)} />
+        <Metric label="本月支出" value={formatMoney(stats.totalExpense)} />
+        <Metric label="本月净变动" value={formatMoney(stats.netChange)} />
+        <Metric label="平均步数" value={stats.averageSteps} />
       </div>
-      <section className="chart-block">
-        <h3>评分趋势</h3>
-        <MiniChart data={trendPoints} kind="score" />
-      </section>
-      <section className="chart-block">
+      <div className="trend-chart-grid">
+        <section className="chart-block">
+          <h3>评分趋势</h3>
+          <MiniChart data={trendPoints} kind="score" />
+        </section>
+        <section className="chart-block">
+          <h3>运动分钟</h3>
+          <MiniBarChart data={trendPoints} kind="exercise" />
+        </section>
+      </div>
+      <div className="trend-chart-grid">
+        <section className="chart-block">
+          <h3>每日支出</h3>
+          <MiniBarChart data={trendPoints} kind="expense" />
+        </section>
+        <section className="chart-block">
+          <h3>支出分类</h3>
+          <MiniPieChart data={stats.expenseCategories} />
+        </section>
+      </div>
+      <section className="chart-block full-chart-block">
         <div className="chart-heading">
           <h3>体重 / 7日均重</h3>
           <div className="chart-legend" aria-label="图例">
@@ -447,7 +470,7 @@ function StatusMessage({ message }: { message: string }) {
 
 function formatDataError(message: string) {
   if (message.includes("Could not find") && message.includes("column")) {
-    return "数据库字段尚未同步。请在 Supabase SQL Editor 执行 supabase/upgrade_20260609_finance.sql，然后刷新页面。";
+    return "数据库字段尚未同步。请在 Supabase SQL Editor 执行 supabase/upgrade_20260610_checkin_refine.sql，然后刷新页面。";
   }
 
   if (message.includes("checkin_records") || message.includes("schema cache")) {
@@ -468,6 +491,11 @@ function Metric({ label, value }: { label: string; value: string | number }) {
       <strong>{value}</strong>
     </div>
   );
+}
+
+function formatMoney(value: number | null) {
+  if (typeof value !== "number") return "-";
+  return `¥${value.toFixed(2)}`;
 }
 
 function viewTitle(view: View) {
@@ -514,16 +542,15 @@ function recordToForm(record: CheckinRecord): CheckinFormValues {
     hygiene_score: record.hygiene_score,
     diet_score: record.diet_score,
     diet_notes: record.diet_notes ?? "",
+    breakfast_notes: record.breakfast_notes ?? "",
+    lunch_notes: record.lunch_notes ?? "",
+    dinner_notes: record.dinner_notes ?? "",
+    snack_notes: record.snack_notes ?? "",
     task_completion: record.task_completion,
     planned_tasks: record.planned_tasks ?? "",
     completed_tasks: record.completed_tasks ?? "",
     tomorrow_tasks: record.tomorrow_tasks ?? "",
-    cash_balance: record.cash_balance,
-    bank_balance: record.bank_balance,
-    alipay_balance: record.alipay_balance,
-    wechat_balance: record.wechat_balance,
-    investment_balance: record.investment_balance,
-    debt_amount: record.debt_amount,
+    funds_total: record.funds_total,
     income_amount: record.income_amount,
     expense_fixed: record.expense_fixed,
     expense_food: record.expense_food,

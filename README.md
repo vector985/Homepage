@@ -6,6 +6,7 @@ Next.js + Vercel + Supabase 的每日打卡网页。`EveryDay_Old.xlsx` 保留�
 
 1. 在 Supabase 新建项目。
 2. 在 Supabase SQL Editor 执行 `supabase/schema.sql`。
+   - 如果数据库已创建，只需要执行 `supabase/upgrade_20260610_checkin_refine.sql` 同步新增字段和评分约束。
 3. 复制 `.env.example` 为 `.env.local`，填入：
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
@@ -34,7 +35,7 @@ npm run dev
 - 今日打卡保存，按 `user_id + record_date` upsert。
 - 历史记录查看和删除。
 - 评分即时计算，保存 `score` 和 `score_detail`。
-- 体重趋势、7 日均重、评分趋势、打卡天数。
+- 体重趋势、7 日均重、评分趋势、运动柱状图、财务柱状图和支出分类饼图。
 - CSV 导出。
 
 第一版不做旧 Excel 全量导入、自定义字段、评分配置编辑、Excel 写入、热量库或 AI 分析。

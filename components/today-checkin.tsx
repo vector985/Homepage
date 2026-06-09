@@ -1,7 +1,7 @@
 "use client";
 
 import { calculateSleepStart } from "@/lib/scoring";
-import type { CheckinFormValues, CheckinRecord, ScoreDetail } from "@/lib/types";
+import type { CheckinFormValues, CheckinRecord } from "@/lib/types";
 import {
   BedDouble,
   Check,
@@ -17,7 +17,7 @@ import {
   Trash2,
   Utensils,
 } from "lucide-react";
-import { useId, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 
 type UpdateForm = <K extends keyof CheckinFormValues>(key: K, value: CheckinFormValues[K]) => void;
 
@@ -26,14 +26,14 @@ const exerciseOptions = ["休息", "臀腿", "胸臂", "核心", "有氧", "拉�
 export function TodayCheckin({
   form,
   previousRecord,
-  score,
+  hasExistingRecord,
   saving,
   onUpdate,
   onSave,
 }: {
   form: CheckinFormValues;
   previousRecord: CheckinRecord | null;
-  score: ScoreDetail;
+  hasExistingRecord: boolean;
   saving: boolean;
   onUpdate: UpdateForm;
   onSave: () => void;
@@ -45,17 +45,16 @@ export function TodayCheckin({
 
   return (
     <div className="today-workspace">
-      <div className="today-score-line">
-        <div>
-          <span>今日评分</span>
-          <strong>{score.total}</strong>
-        </div>
-        <p>先完成核心记录，其他内容需要时再展开。</p>
-        <button className="primary-button quick-save-button" onClick={onSave} disabled={saving}>
-          <Save size={17} />
-          {saving ? "保存中..." : "保存"}
-        </button>
+      <div className="reward-banner">
+        <strong>本月奖励：完成80%高分就买萨罗蒙一双</strong>
       </div>
+
+      <TaskChecklist
+        form={form}
+        previousRecord={previousRecord}
+        hasExistingRecord={hasExistingRecord}
+        onUpdate={onUpdate}
+      />
 
       <section className="checkin-section">
         <SectionHeading icon={BedDouble} title="快速记录" description="睡眠、身体和运动，通常一分钟内完成。" />
@@ -66,7 +65,6 @@ export function TodayCheckin({
             value={form.sleep_hours}
             step="0.1"
             onChange={(value) => onUpdate("sleep_hours", value)}
-            quickValues={[6.5, 7, 7.5, 8]}
           />
           <TimeField label="起床" value={form.wake_time} onChange={(value) => onUpdate("wake_time", value)} />
           <ReadOnlyField label="推算入睡" value={sleepStart || "--:--"} />
@@ -121,9 +119,9 @@ export function TodayCheckin({
             label="洗漱护理"
             value={form.hygiene_score}
             options={[
-              { label: "未完成", value: 0 },
-              { label: "基础完成", value: 1 },
-              { label: "完整完成", value: 2 },
+              { label: "0次", value: 0 },
+              { label: "1次", value: 1 },
+              { label: "2次", value: 2 },
             ]}
             onChange={(value) => onUpdate("hygiene_score", value)}
           />
@@ -131,37 +129,37 @@ export function TodayCheckin({
             label="饮食执行"
             value={form.diet_score}
             options={[
-              { label: "偏离计划", value: 0 },
-              { label: "基本正常", value: 1 },
-              { label: "按计划", value: 2 },
+              { label: "0", value: 0 },
+              { label: "1", value: 1 },
+              { label: "2", value: 2 },
+              { label: "3", value: 3 },
+              { label: "4", value: 4 },
             ]}
             onChange={(value) => onUpdate("diet_score", value)}
           />
         </div>
       </section>
 
-      <TaskChecklist form={form} previousRecord={previousRecord} onUpdate={onUpdate} />
-
       <section className="checkin-section">
-        <SectionHeading icon={Sparkles} title="习惯状态" description="记录今天是否发生，不需要给自己主观打分。" />
+        <SectionHeading icon={Sparkles} title="习惯状态" description="按今天实际表现选择 0 / 1 / 2，尽量用结果而不是感受判断。" />
         <div className="habit-grid">
           <HabitControl
             label="情绪控制"
             value={form.emotional_control}
             onChange={(value) => onUpdate("emotional_control", value)}
-            labels={["稳定", "有波动", "明显失控"]}
+            labels={["0 失控", "1 波动", "2 稳定"]}
           />
           <HabitControl
             label="冲动消费"
             value={form.impulse_spending}
             onChange={(value) => onUpdate("impulse_spending", value)}
-            labels={["没有", "发生一次", "多次发生"]}
+            labels={["0 严重", "1 一次", "2 没有"]}
           />
           <HabitControl
             label="生活节制"
             value={form.life_discipline}
             onChange={(value) => onUpdate("life_discipline", value)}
-            labels={["稳定", "偏离一次", "多次偏离"]}
+            labels={["0 失控", "1 一般", "2 节制"]}
           />
         </div>
       </section>
@@ -171,18 +169,19 @@ export function TodayCheckin({
         <div className="detail-list">
           <DetailDisclosure icon={CircleDollarSign} title="财务统计">
             <div className="finance-summary">
-              <FinanceMetric label="现有资金总额" value={calculateFundsTotal(form)} tone="primary" />
+              <FinanceMetric label="现有资金总额" value={form.funds_total ?? 0} tone="primary" />
               <FinanceMetric label="今日支出" value={calculateExpenseTotal(form)} />
               <FinanceMetric label="今日净变动" value={(form.income_amount ?? 0) - calculateExpenseTotal(form)} />
             </div>
             <h4 className="detail-subtitle">现有资金</h4>
-            <div className="finance-grid balance-grid">
-              <NumberField label="现金" suffix="元" value={form.cash_balance} step="0.01" onChange={(value) => onUpdate("cash_balance", value)} />
-              <NumberField label="银行卡" suffix="元" value={form.bank_balance} step="0.01" onChange={(value) => onUpdate("bank_balance", value)} />
-              <NumberField label="支付宝" suffix="元" value={form.alipay_balance} step="0.01" onChange={(value) => onUpdate("alipay_balance", value)} />
-              <NumberField label="微信" suffix="元" value={form.wechat_balance} step="0.01" onChange={(value) => onUpdate("wechat_balance", value)} />
-              <NumberField label="投资账户" suffix="元" value={form.investment_balance} step="0.01" onChange={(value) => onUpdate("investment_balance", value)} />
-              <NumberField label="负债" suffix="元" value={form.debt_amount} step="0.01" onChange={(value) => onUpdate("debt_amount", value)} />
+            <div className="finance-grid single-finance-grid">
+              <NumberField
+                label="今日结束时资金总额"
+                suffix="元"
+                value={form.funds_total}
+                step="0.01"
+                onChange={(value) => onUpdate("funds_total", value)}
+              />
             </div>
             <h4 className="detail-subtitle">今日收支</h4>
             <div className="finance-grid expense-grid">
@@ -205,21 +204,36 @@ export function TodayCheckin({
           </DetailDisclosure>
 
           <DetailDisclosure icon={Utensils} title="饮食记录">
-            <TextAreaField
-              label="饮食记录"
-              value={form.diet_notes ?? ""}
-              onChange={(value) => onUpdate("diet_notes", value)}
-              placeholder="例如：午餐正常，晚餐略多。"
-            />
-          </DetailDisclosure>
-
-          <DetailDisclosure icon={Sparkles} title="异常复盘">
-            <TextAreaField
-              label="异常复盘"
-              value={form.impulse_spending_note ?? ""}
-              onChange={(value) => onUpdate("impulse_spending_note", value)}
-              placeholder="记录冲动消费、情绪波动或生活失控的触发原因和可替代方案。"
-            />
+            <div className="meal-grid">
+              <TextAreaField
+                label="早餐"
+                value={form.breakfast_notes ?? ""}
+                onChange={(value) => onUpdate("breakfast_notes", value)}
+                placeholder="吃了什么、是否超量。"
+                rows={2}
+              />
+              <TextAreaField
+                label="午餐"
+                value={form.lunch_notes ?? ""}
+                onChange={(value) => onUpdate("lunch_notes", value)}
+                placeholder="吃了什么、是否超量。"
+                rows={2}
+              />
+              <TextAreaField
+                label="晚餐"
+                value={form.dinner_notes ?? ""}
+                onChange={(value) => onUpdate("dinner_notes", value)}
+                placeholder="吃了什么、是否超量。"
+                rows={2}
+              />
+              <TextAreaField
+                label="加餐"
+                value={form.snack_notes ?? ""}
+                onChange={(value) => onUpdate("snack_notes", value)}
+                placeholder="零食、饮料、夜宵等。"
+                rows={2}
+              />
+            </div>
           </DetailDisclosure>
 
           <DetailDisclosure icon={FileText} title="今日复盘">
@@ -235,6 +249,12 @@ export function TodayCheckin({
                 value={form.review_plan ?? ""}
                 onChange={(value) => onUpdate("review_plan", value)}
                 placeholder="明天需要继续或改变什么？"
+              />
+              <TextAreaField
+                label="异常复盘"
+                value={form.impulse_spending_note ?? ""}
+                onChange={(value) => onUpdate("impulse_spending_note", value)}
+                placeholder="记录冲动消费、情绪波动或生活失控的触发原因和替代方案。"
               />
             </div>
           </DetailDisclosure>
@@ -267,23 +287,37 @@ export function TodayCheckin({
 function TaskChecklist({
   form,
   previousRecord,
+  hasExistingRecord,
   onUpdate,
 }: {
   form: CheckinFormValues;
   previousRecord: CheckinRecord | null;
+  hasExistingRecord: boolean;
   onUpdate: UpdateForm;
 }) {
   const [newTask, setNewTask] = useState("");
+  const autoCarryKeyRef = useRef("");
   const tasks = parseLines(form.planned_tasks);
   const completed = new Set(parseLines(form.completed_tasks));
-  const unfinishedFromPrevious = previousRecord
-    ? parseLines(previousRecord.planned_tasks).filter((task) => !new Set(parseLines(previousRecord.completed_tasks)).has(task))
-    : [];
-  const carryTasks = previousRecord
-    ? parseLines(previousRecord.tomorrow_tasks).length > 0
-      ? parseLines(previousRecord.tomorrow_tasks)
-      : unfinishedFromPrevious
-    : [];
+  const carryTasks = useMemo(() => {
+    if (!previousRecord) return [];
+
+    const tomorrowTasks = parseLines(previousRecord.tomorrow_tasks);
+    if (tomorrowTasks.length > 0) return tomorrowTasks;
+
+    const previousCompleted = new Set(parseLines(previousRecord.completed_tasks));
+    return parseLines(previousRecord.planned_tasks).filter((task) => !previousCompleted.has(task));
+  }, [previousRecord]);
+
+  useEffect(() => {
+    const key = `${form.record_date}:${carryTasks.join("|")}`;
+    if (hasExistingRecord || tasks.length > 0 || carryTasks.length === 0 || autoCarryKeyRef.current === key) return;
+
+    autoCarryKeyRef.current = key;
+    onUpdate("planned_tasks", carryTasks.join("\n"));
+    onUpdate("completed_tasks", "");
+    onUpdate("task_completion", 0);
+  }, [carryTasks, form.record_date, hasExistingRecord, onUpdate, tasks.length]);
 
   function syncTasks(nextTasks: string[], nextCompleted: Set<string>) {
     const validCompleted = nextTasks.filter((task) => nextCompleted.has(task));
@@ -324,7 +358,8 @@ function TaskChecklist({
     syncTasks(merged, completed);
   }
 
-  const completion = tasks.length > 0 ? Math.round((completed.size / tasks.length) * 100) : 0;
+  const validCompleted = tasks.filter((task) => completed.has(task));
+  const completion = tasks.length > 0 ? Math.round((validCompleted.length / tasks.length) * 100) : 0;
 
   return (
     <section className="checkin-section">
@@ -370,7 +405,7 @@ function TaskChecklist({
       {carryTasks.length > 0 ? (
         <button type="button" className="carry-button" onClick={carryPreviousTasks}>
           <RotateCcw size={16} />
-          带入昨日未完成或已安排任务
+          重新带入昨日安排
         </button>
       ) : null}
     </section>
@@ -547,16 +582,18 @@ function TextAreaField({
   value,
   onChange,
   placeholder,
+  rows = 3,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
+  rows?: number;
 }) {
   return (
     <label>
       {label}
-      <textarea rows={3} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} />
+      <textarea rows={rows} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} />
     </label>
   );
 }
@@ -590,17 +627,6 @@ function FinanceMetric({ label, value, tone }: { label: string; value: number; t
       <span>{label}</span>
       <strong>{formatCurrency(value)}</strong>
     </div>
-  );
-}
-
-function calculateFundsTotal(values: CheckinFormValues) {
-  return (
-    (values.cash_balance ?? 0) +
-    (values.bank_balance ?? 0) +
-    (values.alipay_balance ?? 0) +
-    (values.wechat_balance ?? 0) +
-    (values.investment_balance ?? 0) -
-    (values.debt_amount ?? 0)
   );
 }
 

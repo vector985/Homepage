@@ -11,23 +11,22 @@ create table if not exists public.checkin_records (
   steps integer check (steps is null or steps >= 0),
   weight_kg numeric(5, 2),
   body_fat_pct numeric(5, 2),
-  life_discipline integer check (life_discipline is null or life_discipline >= 0),
-  impulse_spending integer check (impulse_spending is null or impulse_spending >= 0),
+  life_discipline integer check (life_discipline is null or life_discipline between 0 and 2),
+  impulse_spending integer check (impulse_spending is null or impulse_spending between 0 and 2),
   impulse_spending_note text,
-  emotional_control integer check (emotional_control is null or emotional_control >= 0),
+  emotional_control integer check (emotional_control is null or emotional_control between 0 and 2),
   hygiene_score integer check (hygiene_score is null or hygiene_score between 0 and 2),
-  diet_score integer check (diet_score is null or diet_score between 0 and 2),
+  diet_score integer check (diet_score is null or diet_score between 0 and 4),
   diet_notes text,
+  breakfast_notes text,
+  lunch_notes text,
+  dinner_notes text,
+  snack_notes text,
   task_completion numeric(3, 2) check (task_completion is null or task_completion between 0 and 1),
   planned_tasks text,
   completed_tasks text,
   tomorrow_tasks text,
-  cash_balance numeric(12, 2),
-  bank_balance numeric(12, 2),
-  alipay_balance numeric(12, 2),
-  wechat_balance numeric(12, 2),
-  investment_balance numeric(12, 2),
-  debt_amount numeric(12, 2),
+  funds_total numeric(12, 2),
   income_amount numeric(12, 2),
   expense_fixed numeric(12, 2),
   expense_food numeric(12, 2),
@@ -51,15 +50,14 @@ alter table public.checkin_records add column if not exists exercise_type text;
 alter table public.checkin_records add column if not exists body_fat_pct numeric(5, 2);
 alter table public.checkin_records add column if not exists impulse_spending_note text;
 alter table public.checkin_records add column if not exists diet_notes text;
+alter table public.checkin_records add column if not exists breakfast_notes text;
+alter table public.checkin_records add column if not exists lunch_notes text;
+alter table public.checkin_records add column if not exists dinner_notes text;
+alter table public.checkin_records add column if not exists snack_notes text;
 alter table public.checkin_records add column if not exists planned_tasks text;
 alter table public.checkin_records add column if not exists completed_tasks text;
 alter table public.checkin_records add column if not exists tomorrow_tasks text;
-alter table public.checkin_records add column if not exists cash_balance numeric(12, 2);
-alter table public.checkin_records add column if not exists bank_balance numeric(12, 2);
-alter table public.checkin_records add column if not exists alipay_balance numeric(12, 2);
-alter table public.checkin_records add column if not exists wechat_balance numeric(12, 2);
-alter table public.checkin_records add column if not exists investment_balance numeric(12, 2);
-alter table public.checkin_records add column if not exists debt_amount numeric(12, 2);
+alter table public.checkin_records add column if not exists funds_total numeric(12, 2);
 alter table public.checkin_records add column if not exists income_amount numeric(12, 2);
 alter table public.checkin_records add column if not exists expense_fixed numeric(12, 2);
 alter table public.checkin_records add column if not exists expense_food numeric(12, 2);
@@ -69,6 +67,22 @@ alter table public.checkin_records add column if not exists expense_health numer
 alter table public.checkin_records add column if not exists expense_learning numeric(12, 2);
 alter table public.checkin_records add column if not exists expense_entertainment numeric(12, 2);
 alter table public.checkin_records add column if not exists expense_other numeric(12, 2);
+
+alter table public.checkin_records drop constraint if exists checkin_records_life_discipline_check;
+alter table public.checkin_records add constraint checkin_records_life_discipline_check
+  check (life_discipline is null or life_discipline between 0 and 2);
+
+alter table public.checkin_records drop constraint if exists checkin_records_impulse_spending_check;
+alter table public.checkin_records add constraint checkin_records_impulse_spending_check
+  check (impulse_spending is null or impulse_spending between 0 and 2);
+
+alter table public.checkin_records drop constraint if exists checkin_records_emotional_control_check;
+alter table public.checkin_records add constraint checkin_records_emotional_control_check
+  check (emotional_control is null or emotional_control between 0 and 2);
+
+alter table public.checkin_records drop constraint if exists checkin_records_diet_score_check;
+alter table public.checkin_records add constraint checkin_records_diet_score_check
+  check (diet_score is null or diet_score between 0 and 4);
 
 notify pgrst, 'reload schema';
 

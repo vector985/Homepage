@@ -402,41 +402,19 @@ select:focus {
   margin-top: 18px;
 }
 
-.today-score-line {
+.reward-banner {
   display: flex;
   align-items: center;
-  gap: 16px;
   padding: 13px 15px;
   border: 1px solid #cce4df;
   border-radius: 7px;
   background: var(--surface-accent);
 }
 
-.today-score-line div {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-}
-
-.today-score-line span,
-.today-score-line p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.today-score-line p {
-  flex: 1;
-}
-
-.today-score-line strong {
+.reward-banner strong {
   color: var(--accent);
-  font-size: 27px;
-  line-height: 1;
-}
-
-.quick-save-button {
-  min-width: 96px;
+  font-size: 15px;
+  line-height: 1.45;
 }
 
 .checkin-section {
@@ -471,6 +449,7 @@ select:focus {
 .quick-record-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(120px, 1fr));
+  align-items: start;
   gap: 12px;
   margin-top: 15px;
 }
@@ -489,6 +468,11 @@ select:focus {
   position: relative;
 }
 
+.field-control > input,
+.input-with-suffix input {
+  min-height: 44px;
+}
+
 .input-with-suffix input {
   padding-right: 48px;
 }
@@ -505,7 +489,7 @@ select:focus {
 }
 
 .read-only-value {
-  min-height: 41px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   padding: 10px 11px;
@@ -803,6 +787,16 @@ select:focus {
   gap: 10px;
 }
 
+.single-finance-grid {
+  grid-template-columns: minmax(220px, 380px);
+}
+
+.meal-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
 .finance-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1005,6 +999,20 @@ select:focus {
   border-top: 1px solid var(--line);
 }
 
+.trend-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.trend-chart-grid .chart-block {
+  min-width: 0;
+}
+
+.full-chart-block {
+  margin-top: 18px;
+}
+
 .chart-heading {
   display: flex;
   align-items: center;
@@ -1071,6 +1079,103 @@ select:focus {
   stroke-dasharray: 4 4;
 }
 
+.bar-chart rect {
+  fill: var(--accent);
+}
+
+.pie-chart-wrap {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+}
+
+.pie-chart {
+  width: 100%;
+  height: auto;
+}
+
+.pie-chart path {
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.pie-chart circle {
+  fill: #fff;
+}
+
+.pie-chart text {
+  fill: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pie-chart text + text {
+  fill: var(--accent);
+  font-size: 14px;
+}
+
+.pie-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pie-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pie-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.slice-0 {
+  fill: #0f766e;
+  background: #0f766e;
+}
+
+.slice-1 {
+  fill: #2563eb;
+  background: #2563eb;
+}
+
+.slice-2 {
+  fill: #b7791f;
+  background: #b7791f;
+}
+
+.slice-3 {
+  fill: #b83a2d;
+  background: #b83a2d;
+}
+
+.slice-4 {
+  fill: #64748b;
+  background: #64748b;
+}
+
+.slice-5 {
+  fill: #7c3aed;
+  background: #7c3aed;
+}
+
+.slice-6 {
+  fill: #0f9f6e;
+  background: #0f9f6e;
+}
+
+.slice-7 {
+  fill: #db2777;
+  background: #db2777;
+}
+
 .empty-chart {
   min-height: 136px;
   display: grid;
@@ -1094,6 +1199,10 @@ select:focus {
   .finance-grid {
     grid-template-columns: repeat(3, minmax(110px, 1fr));
   }
+
+  .single-finance-grid {
+    grid-template-columns: minmax(220px, 380px);
+  }
 }
 
 @media (max-width: 900px) {
@@ -1106,6 +1215,7 @@ select:focus {
   }
 
   .habit-grid,
+  .trend-chart-grid,
   .stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1204,16 +1314,6 @@ select:focus {
     width: 100%;
   }
 
-  .today-score-line {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .quick-save-button {
-    width: 100%;
-  }
-
   .checkin-section {
     padding: 18px 0;
   }
@@ -1233,6 +1333,8 @@ select:focus {
 
   .behavior-row,
   .habit-grid,
+  .trend-chart-grid,
+  .pie-chart-wrap,
   .detail-form-grid,
   .finance-summary,
   .score-list,
@@ -1246,6 +1348,10 @@ select:focus {
 
   .finance-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .single-finance-grid {
+    grid-template-columns: 1fr;
   }
 
   .task-add {
